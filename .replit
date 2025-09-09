@@ -1,0 +1,55 @@
+entrypoint = "index.js"
+modules = ["nodejs-22", "python-3.11"]
+hidden = [".config", "package-lock.json"]
+
+[gitHubImport]
+requiredFiles = [".replit", "replit.nix", "package.json", "package-lock.json"]
+
+[nix]
+channel = "stable-24_11"
+
+[deployment]
+run = ["node", "index.js"]
+deploymentTarget = "autoscale"
+ignorePorts = false
+
+[workflows]
+runButton = "Run Javon"
+
+[[workflows.workflow]]
+name = "Run Javon"
+author = 13395290
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx tsx index.ts skipped"
+
+[[workflows.workflow]]
+name = "Javon Web Editor"
+author = 13395290
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx tsx web/server.ts"
+
+[[workflows.workflow]]
+name = "Build and Run Javon"
+author = 13395290
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd lib && npx node-gyp rebuild"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx tsx index.ts built"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[agent]
+expertMode = true

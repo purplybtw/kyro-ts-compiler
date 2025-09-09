@@ -1,0 +1,1 @@
+cmd_Release/obj.target/jv_native.node := c++ -o Release/obj.target/jv_native.node -shared -pthread -rdynamic -m64  -Wl,-soname=jv_native.node -Wl,--start-group Release/obj.target/jv_native/*.o -Wl,--end-group 

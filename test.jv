@@ -1,0 +1,245 @@
+
+// Javon Language Test File
+// Tests various language features and syntax constructs
+
+// 1. Basic variable declarations
+int number = 42;
+float pi = 3.14159;
+string greeting = "Hello, Javon!";
+bool isActive = true;
+const int MAX_SIZE = 1000;
+
+// 2. Arrays
+int[] numbers = [1, 2, 3, 4, 5];
+string[] names = ["Alice", "Bob", "Charlie"];
+float[] measurements = [1.5, 2.7, 3.14, 4.2];
+
+// 3. Type inference
+infer autoValue = 100;
+infer autoText = "inferred string";
+
+// 4. Function definitions
+int fibonacci(n: int): int {
+  if n <= 1 {
+    return n;
+  }
+  return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+void printMessage(msg: string): void {
+  print("Message: " + msg);
+}
+
+float calculateArea(width: float, height: float): float {
+  return width * height;
+}
+
+// 5. Complex control flow
+void testControlFlow(): void {
+  int x = 10;
+  
+  // If-elif-else
+  if x > 15 {
+    print("x is large");
+  } elif x > 5 {
+    print("x is medium");
+  } else {
+    print("x is small");
+  }
+  
+  // For loop
+  for (int i = 0; i < 5; i++) {
+    if i == 2 {
+      continue;
+    }
+    if i == 4 {
+      break;
+    }
+    print("Loop iteration: " + i);
+  }
+  
+  // While loop
+  int counter = 0;
+  while counter < 3 {
+    print("Counter: " + counter);
+    counter++;
+  }
+}
+
+// 6. Complex expressions
+void testExpressions(): void {
+  int a = 5;
+  int b = 10;
+  int c = 15;
+  
+  // Arithmetic expressions
+  int sum = a + b * c - (a / 2);
+  float division = a / 2.5;
+  
+  // Logical expressions
+  bool result1 = (a < b) && (b < c);
+  bool result2 = (a == 5) || (b == 20);
+  bool result3 = !(a > b);
+  
+  // Increment/decrement
+  int x = 10;
+  int y = x++ + ++x - x--;
+  
+  // Conditional (ternary) operator
+  string status = (a > b) ? "greater" : "smaller";
+  
+  // Array access and assignment
+  int[] arr = [1, 2, 3];
+  arr[0] = arr[1] + arr[2];
+}
+
+// 7. Nested functions and scope
+void outerFunction(): void {
+  int outerVar = 100;
+  
+  void innerFunction(): void {
+    int innerVar = 50;
+    print("Inner: " + innerVar);
+    print("Outer: " + outerVar);
+  }
+  
+  innerFunction();
+}
+
+// 8. Generic function (if supported)
+func identity<T>(value: T): T {
+  return value;
+}
+
+// 9. Complex data structures
+type Point {
+  float x;
+  float y;
+}
+
+type Rectangle {
+  Point topLeft;
+  Point bottomRight;
+  string color;
+}
+
+// 10. Object creation and usage
+void testObjects(): void {
+  Point p1 = new Point(1.0, 2.0);
+  Point p2 = new Point(3.0, 4.0);
+  
+  Rectangle rect = new Rectangle(p1, p2, "blue");
+  
+  float width = rect.bottomRight.x - rect.topLeft.x;
+  float height = rect.bottomRight.y - rect.topLeft.y;
+  float area = width * height;
+  
+  print("Rectangle area: " + area);
+}
+
+// 11. Class with inheritance (testing class parser)
+class Animal {
+  string name;
+  int age;
+  
+  void speak(): void {
+    print(name + " makes a sound");
+  }
+}
+
+class Dog extends Animal {
+  string breed;
+  
+  void bark(): void {
+    print(name + " barks!");
+  }
+  
+  override void speak(): void {
+    bark();
+  }
+}
+
+// 12. Interface definition
+interface Drawable {
+  void draw(): void;
+  float getArea(): float;
+}
+
+// 13. Class implementing interface
+class Circle implements Drawable {
+  float radius;
+  Point center;
+  
+  void draw(): void {
+    print("Drawing circle at (" + center.x + ", " + center.y + ")");
+  }
+  
+  float getArea(): float {
+    return 3.14159 * radius * radius;
+  }
+}
+
+// 14. Error handling constructs
+void testErrorHandling(): void {
+  try {
+    int result = 10 / 0;
+    print("Result: " + result);
+  } catch (ArithmeticError e) {
+    print("Arithmetic error: " + e.message);
+  } catch (Error e) {
+    print("General error: " + e.message);
+  } finally {
+    print("Cleanup completed");
+  }
+}
+
+// 15. Switch statement
+void testSwitch(day: int): void {
+  switch day {
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5: {
+      print("Weekday");
+    }
+    case 6:
+    case 7: {
+      print("Weekend");
+    }
+    default: {
+      print("Invalid day");
+    }
+  }
+}
+
+// 16. Main function
+void main(): void {
+  print("Starting Javon language tests...");
+  
+  // Test basic operations
+  int result = fibonacci(7);
+  print("Fibonacci(7) = " + result);
+  
+  printMessage("Testing functions");
+  
+  float area = calculateArea(5.0, 3.0);
+  print("Area: " + area);
+  
+  // Test control flow
+  testControlFlow();
+  
+  // Test expressions
+  testExpressions();
+  
+  // Test objects
+  testObjects();
+  
+  // Test error handling
+  testErrorHandling();
+  
+  // Test switch
+  testSwitch(3);
+  
+  print("All tests completed!");
+}

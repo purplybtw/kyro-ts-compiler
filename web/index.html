@@ -1,0 +1,162 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Javon Language Editor</title>
+    <link rel="stylesheet" href="error-display.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #container {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ccc;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Javon Language Editor</h1>
+    <div id="container"></div>
+
+    <script src="https://unpkg.com/monaco-editor@0.44.0/min/vs/loader.js"></script>
+    <script type="module" src="ast-visualizer.js"></script>
+    <script>
+        require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@0.44.0/min/vs' } });
+
+        require(['vs/editor/editor.main'], function () {
+            // Register Javon language
+            monaco.languages.register({ id: 'javon' });
+
+            // Set up syntax highlighting
+            monaco.languages.setMonarchTokensProvider('javon', {
+                tokenizer: {
+                    root: [
+                        [/\b(if|elif|else|for|while|return|break|continue|try|catch|throw|finally|switch|case|default)\b/, 'keyword.control'],
+                        [/\b(int|float|char|bool|void)\b/, 'type.primitive'],
+                        [/\b(class|type|new|async|await|match|check|func|implements|extends|const|null|as|infer|undefined)\b/, 'keyword'],
+                        [/\b(true|false)\b/, 'constant.language.boolean'],
+                        [/\b\d+\.?\d*\b/, 'number'],
+                        [/"([^"\\]|\\.)*"/, 'string'],
+                        [/'([^'\\]|\\.)*'/, 'string'],
+                        [/\/\/.*$/, 'comment'],
+                        [/\/\*/, 'comment', '@comment'],
+                        [/\b[A-Z][a-zA-Z0-9_]*\b/, 'type.identifier'],
+                        [/\b[a-z_][a-zA-Z0-9_]*\b/, 'identifier'],
+                        [/[{}()\[\]]/, 'delimiter.bracket'],
+                        [/[;,.]/, 'delimiter'],
+                        [/[=!<>]=?/, 'operator.comparison'],
+                        [/[+\-*\/]/, 'operator.arithmetic'],
+                        [/&&|\|\|/, 'operator.logical'],
+                        [/\+\+|--/, 'operator.increment'],
+                    ],
+                    comment: [
+                        [/[^\/*]+/, 'comment'],
+                        [/\*\//, 'comment', '@pop'],
+                        [/[\/*]/, 'comment']
+                    ]
+                }
+            });
+
+            // Set language configuration
+            monaco.languages.setLanguageConfiguration('javon', {
+                comments: {
+                    lineComment: '//',
+                    blockComment: ['/*', '*/']
+                },
+                brackets: [
+                    ['{', '}'],
+                    ['[', ']'],
+                    ['(', ')']
+                ],
+                autoClosingPairs: [
+                    { open: '{', close: '}' },
+                    { open: '[', close: ']' },
+                    { open: '(', close: ')' },
+                    { open: '"', close: '"' },
+                    { open: "'", close: "'" }
+                ],
+                surroundingPairs: [
+                    { open: '{', close: '}' },
+                    { open: '[', close: ']' },
+                    { open: '(', close: ')' },
+                    { open: '"', close: '"' },
+                    { open: "'", close: "'" }
+                ]
+            });
+
+            // Load your .jv file content
+            fetch('./main.jv')
+                .then(response => response.text())
+                .then(javonCode => {
+                    // Define custom theme with clearer colors
+                    monaco.editor.defineTheme('javon-dark', {
+                        base: 'vs-dark',
+                        inherit: true,
+                        rules: [
+                            { token: 'keyword.control', foreground: '569CD6' },
+                            { token: 'type.primitive', foreground: '569CD6' },
+                            { token: 'type.identifier', foreground: 'CCCCCC' },
+                            { token: 'keyword', foreground: '569CD6' },
+                            { token: 'number', foreground: 'B5CEA8' },
+                            { token: 'string', foreground: 'CE9178' },
+                            { token: 'comment', foreground: '6A9955' },
+                            { token: 'identifier', foreground: 'CCCCCC' },
+                            { token: 'operator', foreground: 'D4D4D4' }
+                        ],
+                        colors: {}
+                    });
+
+                    // Create the editor with Javon syntax highlighting
+                    const editor = monaco.editor.create(document.getElementById('container'), {
+                        value: javonCode,
+                        language: 'javon',
+                        theme: 'javon-dark',
+                        automaticLayout: true,
+                        fontSize: 14,
+                        minimap: { enabled: true }
+                    });
+
+                    // Initialize AST visualizer
+                    if (window.editorManager) {
+                        window.editorManager.initializeEditor(editor);
+                    }
+                })
+                .catch(err => {
+                    // Fallback content if file can't be loaded
+                    const editor = monaco.editor.create(document.getElementById('container'), {
+                        value: `// Javon Language Example
+int main() {
+    int x = 10;
+    if x > 5 {
+        print("x is greater than 5");
+    } elif x == 5 {
+        print("x equals 5");
+    } else {
+        print("x is less than 5");
+    }
+    return 0;
+}`,
+                        language: 'javon',
+                        theme: 'javon-dark',
+                        automaticLayout: true,
+                        fontSize: 14,
+                        minimap: { enabled: true }
+                    });
+
+                    // Initialize AST visualizer
+                    if (window.editorManager) {
+                        window.editorManager.initializeEditor(editor);
+                    }
+                });
+        });
+    </script>
+</body>
+</html>

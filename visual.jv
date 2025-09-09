@@ -1,0 +1,561 @@
+=== Visual (Indentation) ===
+
+Program [line: 1, col: 1]
+  FunctionDeclaration [line: 1, col: 0]
+    returnType: TypeReference("T") [line: 1, col: 25]
+    identifier: Identifier("add") [line: 1, col: 5]
+      Parameter [line: 1, col: 16]
+        identifier: Identifier("a") [line: 1, col: 12]
+        type: TypeReference("T") [line: 1, col: 15]
+      Parameter [line: 1, col: 22]
+        identifier: Identifier("b") [line: 1, col: 18]
+        type: TypeReference("T") [line: 1, col: 21]
+    body:   Block [line: 1, col: 27]
+    ReturnStatement [line: 2, col: 2]
+      argument:     BinaryExpression [line: 2, col: 11]
+      left: Identifier("a") [line: 2, col: 9]
+      operator: +
+      right: Identifier("b") [line: 2, col: 13]
+  FunctionDeclaration [line: 5, col: 0]
+    returnType:   ArrayType [line: 5, col: 45]
+    elementType: TypeReference("T") [line: 5, col: 45]
+    identifier: Identifier("processArray") [line: 5, col: 5]
+      Parameter [line: 5, col: 29]
+        identifier: Identifier("arr") [line: 5, col: 21]
+        type:       ArrayType [line: 5, col: 26]
+        elementType: TypeReference("T") [line: 5, col: 26]
+      Parameter [line: 5, col: 42]
+        identifier: Identifier("callback") [line: 5, col: 31]
+        type: TypeReference("T") [line: 5, col: 41]
+    body:   Block [line: 5, col: 49]
+    VariableDeclaration [line: 6, col: 2]
+      isConstant: false
+      type:     ArrayType [line: 6, col: 2]
+      elementType: TypeReference("T") [line: 6, col: 2]
+      identifier: Identifier("result") [line: 6, col: 6]
+      initializer:     ArrayExpression [line: 6, col: 15]
+    ForStatement [line: 7, col: 2]
+      init:     VariableDeclaration [line: 7, col: 6]
+      isConstant: false
+      type: TypeReference("int") [line: 7, col: 6]
+      identifier: Identifier("i") [line: 7, col: 10]
+      initializer: NumberLiteral(0) [line: 7, col: 14]
+      condition:     BinaryExpression [line: 7, col: 19]
+      left: Identifier("i") [line: 7, col: 17]
+      operator: <
+      right:     MemberExpression [line: 7, col: 31]
+      object: Identifier("arr") [line: 7, col: 21]
+      property: Identifier("length") [line: 7, col: 25]
+      computed: false
+      update:     UpdateExpression [line: 7, col: 34]
+      operator: ++
+      prefix: false
+      operand: Identifier("i") [line: 7, col: 33]
+      body:     Block [line: 7, col: 37]
+      ExpressionStatement [line: 8, col: 4]
+        expression:       CallExpression [line: 8, col: 33]
+          MemberExpression [line: 8, col: 15]
+            object: Identifier("result") [line: 8, col: 4]
+            property: Identifier("push") [line: 8, col: 11]
+            computed: false
+          CallExpression [line: 8, col: 16]
+Identifier("callback") [line: 8, col: 16]
+              MemberExpression [line: 8, col: 31]
+                object: Identifier("arr") [line: 8, col: 25]
+                property: Identifier("i") [line: 8, col: 29]
+                computed: true
+    ReturnStatement [line: 10, col: 2]
+      argument: Identifier("result") [line: 10, col: 9]
+  FunctionDeclaration [line: 13, col: 0]
+    returnType: TypeReference("int") [line: 13, col: 24]
+    identifier: Identifier("factorial") [line: 13, col: 5]
+      Parameter [line: 13, col: 21]
+        identifier: Identifier("n") [line: 13, col: 15]
+        type: TypeReference("int") [line: 13, col: 18]
+    body:   Block [line: 13, col: 28]
+    IfStatement [line: 14, col: 2]
+      condition:     BinaryExpression [line: 14, col: 7]
+      left: Identifier("n") [line: 14, col: 5]
+      operator: <=
+      right: NumberLiteral(1) [line: 14, col: 9]
+      then:     Block [line: 14, col: 11]
+      ReturnStatement [line: 15, col: 4]
+        argument: NumberLiteral(1) [line: 15, col: 11]
+      else:     Block [line: 16, col: 9]
+      ReturnStatement [line: 17, col: 4]
+        argument:       BinaryExpression [line: 17, col: 13]
+        left: Identifier("n") [line: 17, col: 11]
+        operator: *
+        right:       CallExpression [line: 17, col: 15]
+Identifier("factorial") [line: 17, col: 15]
+          BinaryExpression [line: 17, col: 27]
+            left: Identifier("n") [line: 17, col: 25]
+            operator: -
+            right: NumberLiteral(1) [line: 17, col: 29]
+  FunctionDeclaration [line: 21, col: 0]
+    returnType: TypeReference("void") [line: 21, col: 13]
+    identifier: Identifier("main") [line: 21, col: 5]
+    body:   Block [line: 21, col: 18]
+    VariableDeclaration [line: 22, col: 2]
+      isConstant: true
+      type: TypeReference("int") [line: 22, col: 8]
+      identifier: Identifier("MAX_SIZE") [line: 22, col: 12]
+      initializer: NumberLiteral(100) [line: 22, col: 23]
+    VariableDeclaration [line: 23, col: 2]
+      isConstant: false
+      type:     ArrayType [line: 23, col: 2]
+      elementType: TypeReference("int") [line: 23, col: 2]
+      identifier: Identifier("numbers") [line: 23, col: 8]
+      initializer:     ArrayExpression [line: 23, col: 18]
+NumberLiteral(1) [line: 23, col: 19]
+NumberLiteral(2) [line: 23, col: 22]
+NumberLiteral(3) [line: 23, col: 25]
+NumberLiteral(4) [line: 23, col: 28]
+NumberLiteral(5) [line: 23, col: 31]
+    VariableDeclaration [line: 24, col: 2]
+      isConstant: false
+      type:     ArrayType [line: 24, col: 2]
+      elementType: TypeReference("float") [line: 24, col: 2]
+      identifier: Identifier("decimals") [line: 24, col: 10]
+      initializer:     ArrayExpression [line: 24, col: 21]
+NumberLiteral(1.5) [line: 24, col: 22]
+NumberLiteral(2.7) [line: 24, col: 27]
+NumberLiteral(3.14) [line: 24, col: 32]
+    VariableDeclaration [line: 25, col: 2]
+      isConstant: false
+      type: TypeReference("string") [line: 25, col: 2]
+      identifier: Identifier("message") [line: 25, col: 9]
+      initializer: StringLiteral("Hello World") [line: 25, col: 19]
+    VariableDeclaration [line: 26, col: 2]
+      isConstant: false
+      type: TypeReference("bool") [line: 26, col: 2]
+      identifier: Identifier("isActive") [line: 26, col: 7]
+      initializer: BooleanLiteral(true) [line: 26, col: 18]
+    VariableDeclaration [line: 28, col: 2]
+      isConstant: false
+      type:     InferType [line: 28, col: 2]
+      identifier: Identifier("autoInt") [line: 28, col: 8]
+      initializer: NumberLiteral(42) [line: 28, col: 18]
+    VariableDeclaration [line: 29, col: 2]
+      isConstant: false
+      type:     InferType [line: 29, col: 2]
+      identifier: Identifier("autoString") [line: 29, col: 8]
+      initializer: StringLiteral("inferred") [line: 29, col: 21]
+    VariableDeclaration [line: 31, col: 2]
+      isConstant: false
+      type: TypeReference("int") [line: 31, col: 2]
+      identifier: Identifier("sum") [line: 31, col: 6]
+      initializer: NumberLiteral(0) [line: 31, col: 12]
+    ForStatement [line: 32, col: 2]
+      init:     VariableDeclaration [line: 32, col: 6]
+      isConstant: false
+      type: TypeReference("int") [line: 32, col: 6]
+      identifier: Identifier("i") [line: 32, col: 10]
+      initializer: NumberLiteral(0) [line: 32, col: 14]
+      condition:     BinaryExpression [line: 32, col: 19]
+      left: Identifier("i") [line: 32, col: 17]
+      operator: <
+      right:     MemberExpression [line: 32, col: 35]
+      object: Identifier("numbers") [line: 32, col: 21]
+      property: Identifier("length") [line: 32, col: 29]
+      computed: false
+      update:     UpdateExpression [line: 32, col: 38]
+      operator: ++
+      prefix: false
+      operand: Identifier("i") [line: 32, col: 37]
+      body:     Block [line: 32, col: 41]
+      Assignment [line: 33, col: 8]
+        left: Identifier("sum") [line: 33, col: 4]
+        right:       BinaryExpression [line: 33, col: 8]
+        left: Identifier("sum") [line: 33, col: 4]
+        operator: +
+        right:       MemberExpression [line: 33, col: 20]
+        object: Identifier("numbers") [line: 33, col: 10]
+        property: Identifier("i") [line: 33, col: 18]
+        computed: true
+    VariableDeclaration [line: 36, col: 2]
+      isConstant: false
+      type: TypeReference("int") [line: 36, col: 2]
+      identifier: Identifier("counter") [line: 36, col: 6]
+      initializer: NumberLiteral(0) [line: 36, col: 16]
+    WhileStatement [line: 37, col: 2]
+      condition:     BinaryExpression [line: 37, col: 16]
+      left: Identifier("counter") [line: 37, col: 8]
+      operator: <
+      right: NumberLiteral(5) [line: 37, col: 18]
+      body:     Block [line: 37, col: 20]
+      ExpressionStatement [line: 38, col: 4]
+        expression:       UpdateExpression [line: 38, col: 11]
+        operator: ++
+        prefix: false
+        operand: Identifier("counter") [line: 38, col: 4]
+      IfStatement [line: 39, col: 4]
+        condition:       BinaryExpression [line: 39, col: 15]
+        left: Identifier("counter") [line: 39, col: 7]
+        operator: ==
+        right: NumberLiteral(3) [line: 39, col: 17]
+        then:       Block [line: 39, col: 19]
+        ContinueStatement [line: 40, col: 6]
+      IfStatement [line: 43, col: 4]
+        condition:       BinaryExpression [line: 43, col: 15]
+        left: Identifier("counter") [line: 43, col: 7]
+        operator: >
+        right: NumberLiteral(4) [line: 43, col: 17]
+        then:       Block [line: 43, col: 19]
+        BreakStatement [line: 44, col: 6]
+    VariableDeclaration [line: 48, col: 2]
+      isConstant: false
+      type: TypeReference("int") [line: 48, col: 2]
+      identifier: Identifier("result") [line: 48, col: 6]
+      initializer:     CallExpression [line: 48, col: 15]
+Identifier("add") [line: 48, col: 15]
+NumberLiteral(10) [line: 48, col: 24]
+NumberLiteral(20) [line: 48, col: 28]
+    VariableDeclaration [line: 49, col: 2]
+      isConstant: false
+      type: TypeReference("string") [line: 49, col: 2]
+      identifier: Identifier("combined") [line: 49, col: 9]
+      initializer:     CallExpression [line: 49, col: 20]
+Identifier("add") [line: 49, col: 20]
+StringLiteral("Hello") [line: 49, col: 32]
+StringLiteral(" World") [line: 49, col: 41]
+    VariableDeclaration [line: 51, col: 2]
+      isConstant: false
+      type: TypeReference("float") [line: 51, col: 2]
+      identifier: Identifier("average") [line: 51, col: 8]
+      initializer:     BinaryExpression [line: 51, col: 22]
+      left: Identifier("sum") [line: 51, col: 18]
+      operator: /
+      right:     MemberExpression [line: 51, col: 38]
+      object: Identifier("numbers") [line: 51, col: 24]
+      property: Identifier("length") [line: 51, col: 32]
+      computed: false
+    VariableDeclaration [line: 52, col: 2]
+      isConstant: false
+      type: TypeReference("bool") [line: 52, col: 2]
+      identifier: Identifier("isLarge") [line: 52, col: 7]
+      initializer:     BinaryExpression [line: 52, col: 25]
+      left: Identifier("average") [line: 52, col: 17]
+      operator: >
+      right: NumberLiteral(2.5) [line: 52, col: 27]
+    VariableDeclaration [line: 53, col: 2]
+      isConstant: false
+      type: TypeReference("string") [line: 53, col: 2]
+      identifier: Identifier("status") [line: 53, col: 9]
+      initializer:     ConditionalExpression [line: 53, col: 45]
+      test: Identifier("isLarge") [line: 53, col: 18]
+      consequent: StringLiteral("large") [line: 53, col: 28]
+      alternate: StringLiteral("small") [line: 53, col: 38]
+    VariableDeclaration [line: 55, col: 2]
+      isConstant: false
+      type: TypeReference("int") [line: 55, col: 2]
+      identifier: Identifier("fact5") [line: 55, col: 6]
+      initializer:     CallExpression [line: 55, col: 14]
+Identifier("factorial") [line: 55, col: 14]
+NumberLiteral(5) [line: 55, col: 24]
+    VariableDeclaration [line: 57, col: 2]
+      isConstant: false
+      type:     ArrayType [line: 57, col: 2]
+      elementType: TypeReference("string") [line: 57, col: 2]
+      identifier: Identifier("names") [line: 57, col: 11]
+      initializer:     ArrayExpression [line: 57, col: 19]
+StringLiteral("Alice") [line: 57, col: 20]
+StringLiteral("Bob") [line: 57, col: 29]
+StringLiteral("Charlie") [line: 57, col: 36]
+    ForStatement [line: 58, col: 2]
+      init:     VariableDeclaration [line: 58, col: 6]
+      isConstant: false
+      type: TypeReference("int") [line: 58, col: 6]
+      identifier: Identifier("j") [line: 58, col: 10]
+      initializer: NumberLiteral(0) [line: 58, col: 14]
+      condition:     BinaryExpression [line: 58, col: 19]
+      left: Identifier("j") [line: 58, col: 17]
+      operator: <
+      right:     MemberExpression [line: 58, col: 33]
+      object: Identifier("names") [line: 58, col: 21]
+      property: Identifier("length") [line: 58, col: 27]
+      computed: false
+      update:     UpdateExpression [line: 58, col: 36]
+      operator: ++
+      prefix: false
+      operand: Identifier("j") [line: 58, col: 35]
+      body:     Block [line: 58, col: 39]
+      IfStatement [line: 59, col: 4]
+        condition:       BinaryExpression [line: 59, col: 16]
+        left:       MemberExpression [line: 59, col: 16]
+        object: Identifier("names") [line: 59, col: 7]
+        property: Identifier("j") [line: 59, col: 13]
+        computed: true
+        operator: ==
+        right: StringLiteral("Bob") [line: 59, col: 18]
+        then:       Block [line: 59, col: 24]
+        ContinueStatement [line: 60, col: 6]
+    VariableDeclaration [line: 64, col: 2]
+      isConstant: false
+      type: TypeReference("int") [line: 64, col: 2]
+      identifier: Identifier("x") [line: 64, col: 6]
+      initializer: NumberLiteral(10) [line: 64, col: 10]
+    VariableDeclaration [line: 65, col: 2]
+      isConstant: false
+      type: TypeReference("int") [line: 65, col: 2]
+      identifier: Identifier("y") [line: 65, col: 6]
+      initializer:     BinaryExpression [line: 65, col: 18]
+      left:     BinaryExpression [line: 65, col: 13]
+      left:     UpdateExpression [line: 65, col: 11]
+      operator: ++
+      prefix: false
+      operand: Identifier("x") [line: 65, col: 10]
+      operator: +
+      right:     UpdateExpression [line: 65, col: 15]
+      operator: ++
+      prefix: true
+      operand: Identifier("x") [line: 65, col: 16]
+      operator: -
+      right:     UpdateExpression [line: 65, col: 21]
+      operator: --
+      prefix: false
+      operand: Identifier("x") [line: 65, col: 20]
+    VariableDeclaration [line: 67, col: 2]
+      isConstant: false
+      type: TypeReference("bool") [line: 67, col: 2]
+      identifier: Identifier("complex") [line: 67, col: 7]
+      initializer:     LogicalExpression [line: 67, col: 36]
+      left:     LogicalExpression [line: 67, col: 25]
+      left:     BinaryExpression [line: 67, col: 20]
+      left: Identifier("x") [line: 67, col: 18]
+      operator: >
+      right: NumberLiteral(5) [line: 67, col: 22]
+      operator: &&
+      right:     BinaryExpression [line: 67, col: 30]
+      left: Identifier("y") [line: 67, col: 28]
+      operator: <
+      right: NumberLiteral(20) [line: 67, col: 32]
+      operator: ||
+      right:     BinaryExpression [line: 67, col: 43]
+      left: Identifier("sum") [line: 67, col: 39]
+      operator: !=
+      right: NumberLiteral(0) [line: 67, col: 45]
+    VariableDeclaration [line: 69, col: 2]
+      isConstant: false
+      type: TypeReference("User") [line: 69, col: 2]
+      identifier: Identifier("user") [line: 69, col: 7]
+      initializer:     NewExpression [line: 69, col: 14]
+Identifier("User") [line: 69, col: 18]
+StringLiteral("John") [line: 69, col: 23]
+NumberLiteral(25) [line: 69, col: 31]
+    VariableDeclaration [line: 70, col: 2]
+      isConstant: false
+      type: TypeReference("string") [line: 70, col: 2]
+      identifier: Identifier("greeting") [line: 70, col: 9]
+      initializer:     BinaryExpression [line: 70, col: 30]
+      left: StringLiteral("Hello, ") [line: 70, col: 20]
+      operator: +
+      right:     MemberExpression [line: 70, col: 41]
+      object: Identifier("user") [line: 70, col: 32]
+      property: Identifier("name") [line: 70, col: 37]
+      computed: false
+    VariableDeclaration [line: 72, col: 2]
+      isConstant: false
+      type:     ArrayType [line: 72, col: 2]
+      elementType: TypeReference("int") [line: 72, col: 2]
+      identifier: Identifier("processed") [line: 72, col: 8]
+      initializer:     CallExpression [line: 72, col: 20]
+Identifier("processArray") [line: 72, col: 20]
+Identifier("numbers") [line: 72, col: 38]
+Identifier("factorial") [line: 72, col: 47]
+  FunctionDeclaration [line: 80, col: 0]
+    returnType: TypeReference("User") [line: 80, col: 41]
+    identifier: Identifier("createUser") [line: 80, col: 5]
+      Parameter [line: 80, col: 28]
+        identifier: Identifier("name") [line: 80, col: 16]
+        type: TypeReference("string") [line: 80, col: 22]
+      Parameter [line: 80, col: 38]
+        identifier: Identifier("age") [line: 80, col: 30]
+        type: TypeReference("int") [line: 80, col: 35]
+    body:   Block [line: 80, col: 46]
+    ReturnStatement [line: 81, col: 2]
+      argument:     NewExpression [line: 81, col: 9]
+Identifier("User") [line: 81, col: 13]
+Identifier("name") [line: 81, col: 18]
+Identifier("age") [line: 81, col: 24]
+  FunctionDeclaration [line: 84, col: 0]
+    returnType: TypeReference("int") [line: 84, col: 24]
+    identifier: Identifier("fibonacci") [line: 84, col: 5]
+      Parameter [line: 84, col: 21]
+        identifier: Identifier("n") [line: 84, col: 15]
+        type: TypeReference("int") [line: 84, col: 18]
+    body:   Block [line: 84, col: 28]
+    IfStatement [line: 85, col: 2]
+      condition:     BinaryExpression [line: 85, col: 7]
+      left: Identifier("n") [line: 85, col: 5]
+      operator: <=
+      right: NumberLiteral(1) [line: 85, col: 9]
+      then:     Block [line: 85, col: 11]
+      ReturnStatement [line: 86, col: 4]
+        argument: Identifier("n") [line: 86, col: 11]
+    VariableDeclaration [line: 89, col: 2]
+      isConstant: false
+      type: TypeReference("int") [line: 89, col: 2]
+      identifier: Identifier("a") [line: 89, col: 6]
+      initializer: NumberLiteral(0) [line: 89, col: 10]
+    VariableDeclaration [line: 90, col: 2]
+      isConstant: false
+      type: TypeReference("int") [line: 90, col: 2]
+      identifier: Identifier("b") [line: 90, col: 6]
+      initializer: NumberLiteral(1) [line: 90, col: 10]
+    ForStatement [line: 92, col: 2]
+      init:     VariableDeclaration [line: 92, col: 6]
+      isConstant: false
+      type: TypeReference("int") [line: 92, col: 6]
+      identifier: Identifier("i") [line: 92, col: 10]
+      initializer: NumberLiteral(2) [line: 92, col: 14]
+      condition:     BinaryExpression [line: 92, col: 19]
+      left: Identifier("i") [line: 92, col: 17]
+      operator: <=
+      right: Identifier("n") [line: 92, col: 21]
+      update:     UpdateExpression [line: 92, col: 25]
+      operator: ++
+      prefix: false
+      operand: Identifier("i") [line: 92, col: 24]
+      body:     Block [line: 92, col: 28]
+      VariableDeclaration [line: 93, col: 4]
+        isConstant: false
+        type: TypeReference("int") [line: 93, col: 4]
+        identifier: Identifier("temp") [line: 93, col: 8]
+        initializer:       BinaryExpression [line: 93, col: 17]
+        left: Identifier("a") [line: 93, col: 15]
+        operator: +
+        right: Identifier("b") [line: 93, col: 19]
+      Assignment [line: 94, col: 6]
+        left: Identifier("a") [line: 94, col: 4]
+        right: Identifier("b") [line: 94, col: 8]
+      Assignment [line: 95, col: 6]
+        left: Identifier("b") [line: 95, col: 4]
+        right: Identifier("temp") [line: 95, col: 8]
+    ReturnStatement [line: 98, col: 2]
+      argument: Identifier("b") [line: 98, col: 9]
+  FunctionDeclaration [line: 101, col: 0]
+    returnType: TypeReference("void") [line: 101, col: 31]
+    identifier: Identifier("testComplexExpressions") [line: 101, col: 5]
+    body:   Block [line: 101, col: 36]
+    VariableDeclaration [line: 102, col: 2]
+      isConstant: false
+      type: TypeReference("int") [line: 102, col: 2]
+      identifier: Identifier("a") [line: 102, col: 6]
+      initializer: NumberLiteral(5) [line: 102, col: 10]
+    VariableDeclaration [line: 103, col: 2]
+      isConstant: false
+      type: TypeReference("int") [line: 103, col: 2]
+      identifier: Identifier("b") [line: 103, col: 6]
+      initializer: NumberLiteral(10) [line: 103, col: 10]
+    VariableDeclaration [line: 104, col: 2]
+      isConstant: false
+      type: TypeReference("int") [line: 104, col: 2]
+      identifier: Identifier("c") [line: 104, col: 6]
+      initializer: NumberLiteral(15) [line: 104, col: 10]
+    VariableDeclaration [line: 106, col: 2]
+      isConstant: false
+      type: TypeReference("bool") [line: 106, col: 2]
+      identifier: Identifier("result1") [line: 106, col: 7]
+      initializer:     LogicalExpression [line: 106, col: 23]
+      left:     BinaryExpression [line: 106, col: 19]
+      left: Identifier("a") [line: 106, col: 17]
+      operator: <
+      right: Identifier("b") [line: 106, col: 21]
+      operator: &&
+      right:     BinaryExpression [line: 106, col: 27]
+      left: Identifier("b") [line: 106, col: 25]
+      operator: <
+      right: Identifier("c") [line: 106, col: 29]
+    VariableDeclaration [line: 107, col: 2]
+      isConstant: false
+      type: TypeReference("bool") [line: 107, col: 2]
+      identifier: Identifier("result2") [line: 107, col: 7]
+      initializer:     LogicalExpression [line: 107, col: 23]
+      left:     BinaryExpression [line: 107, col: 19]
+      left: Identifier("a") [line: 107, col: 17]
+      operator: ==
+      right: NumberLiteral(5) [line: 107, col: 21]
+      operator: ||
+      right:     BinaryExpression [line: 107, col: 27]
+      left: Identifier("b") [line: 107, col: 25]
+      operator: ==
+      right: NumberLiteral(20) [line: 107, col: 29]
+    VariableDeclaration [line: 108, col: 2]
+      isConstant: false
+      type: TypeReference("bool") [line: 108, col: 2]
+      identifier: Identifier("result3") [line: 108, col: 7]
+      initializer:     UnaryExpression [line: 108, col: 17]
+      operator: !
+      operand:     BinaryExpression [line: 108, col: 21]
+      left: Identifier("a") [line: 108, col: 19]
+      operator: >
+      right: Identifier("b") [line: 108, col: 23]
+    VariableDeclaration [line: 110, col: 2]
+      isConstant: false
+      type: TypeReference("int") [line: 110, col: 2]
+      identifier: Identifier("arithmetic") [line: 110, col: 6]
+      initializer:     BinaryExpression [line: 110, col: 31]
+      left:     BinaryExpression [line: 110, col: 27]
+      left:     BinaryExpression [line: 110, col: 22]
+      left: Identifier("a") [line: 110, col: 20]
+      operator: +
+      right: Identifier("b") [line: 110, col: 24]
+      operator: *
+      right: Identifier("c") [line: 110, col: 29]
+      operator: -
+      right:     BinaryExpression [line: 110, col: 36]
+      left: Identifier("a") [line: 110, col: 34]
+      operator: /
+      right: NumberLiteral(2) [line: 110, col: 38]
+    VariableDeclaration [line: 111, col: 2]
+      isConstant: false
+      type: TypeReference("float") [line: 111, col: 2]
+      identifier: Identifier("division") [line: 111, col: 8]
+      initializer:     BinaryExpression [line: 111, col: 21]
+      left: Identifier("a") [line: 111, col: 19]
+      operator: /
+      right: NumberLiteral(2) [line: 111, col: 23]
+    VariableDeclaration [line: 113, col: 2]
+      isConstant: false
+      type: TypeReference("string") [line: 113, col: 2]
+      identifier: Identifier("text") [line: 113, col: 9]
+      initializer:     BinaryExpression [line: 113, col: 26]
+      left: StringLiteral("Value: ") [line: 113, col: 16]
+      operator: +
+      right: Identifier("a") [line: 113, col: 28]
+    VariableDeclaration [line: 115, col: 2]
+      isConstant: false
+      type: TypeReference("int") [line: 115, col: 2]
+      identifier: Identifier("conditional") [line: 115, col: 6]
+      initializer:     ConditionalExpression [line: 115, col: 33]
+      test:     BinaryExpression [line: 115, col: 22]
+      left: Identifier("a") [line: 115, col: 20]
+      operator: >
+      right: Identifier("b") [line: 115, col: 24]
+      consequent: Identifier("a") [line: 115, col: 28]
+      alternate: Identifier("b") [line: 115, col: 32]
+    VariableDeclaration [line: 117, col: 2]
+      isConstant: false
+      type:     ArrayType [line: 117, col: 2]
+      elementType: TypeReference("int") [line: 117, col: 2]
+      identifier: Identifier("array") [line: 117, col: 8]
+      initializer:     ArrayExpression [line: 117, col: 16]
+Identifier("a") [line: 117, col: 17]
+Identifier("b") [line: 117, col: 20]
+Identifier("c") [line: 117, col: 23]
+    Assignment [line: 118, col: 11]
+      left:     MemberExpression [line: 118, col: 11]
+      object: Identifier("array") [line: 118, col: 2]
+      property: NumberLiteral(0) [line: 118, col: 8]
+      computed: true
+      right:     BinaryExpression [line: 118, col: 22]
+      left:     MemberExpression [line: 118, col: 22]
+      object: Identifier("array") [line: 118, col: 13]
+      property: NumberLiteral(1) [line: 118, col: 19]
+      computed: true
+      operator: +
+      right:     MemberExpression [line: 118, col: 32]
+      object: Identifier("array") [line: 118, col: 24]
+      property: NumberLiteral(2) [line: 118, col: 30]
+      computed: true

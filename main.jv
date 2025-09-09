@@ -1,0 +1,137 @@
+/*func add<T>(a: T, b: T): T {
+  return a + b;
+}
+
+func processArray<T>(arr: T[], callback: T): T[] {
+  T[] result = [];
+  for(int i = 0; i < arr.length; i++) {
+    result.push(callback(arr[i]));
+  }
+  return result;
+}
+
+func factorial(n: int): int {
+  if n <= 1 {
+    return 1;
+  } else {
+    return n * factorial(n - 1);
+  }
+}
+
+func main(): void {
+  const int MAX_SIZE = 100;
+  int[] numbers = [1, 2, 3, 4, 5];
+  float[] decimals = [1.5, 2.7, 3.14];
+  string message = "Hello World";
+  bool isActive = true;
+
+  infer autoInt = 42;
+  infer autoString = "inferred";
+
+  int sum = 0;
+  for(int i = 0; i < numbers.length; i++) {
+    sum += numbers[i];
+  }
+
+  int counter = 0;
+  while counter < 5 {
+    counter++;
+    if counter == 3 {
+      continue;
+    }
+
+    if counter > 4 {
+      break;
+    }
+  }
+
+  int result = add<int>(10, 20);
+  string combined = add<string>("Hello", " World");
+
+  float average = sum / numbers.length;
+  bool isLarge = average > 2.5;
+  string status = isLarge ? "large" : "small";
+
+  int fact5 = factorial(5);
+
+  string[] names = ["Alice", "Bob", "Charlie"];
+  for(int j = 0; j < names.length; j++) {
+    if names[j] == "Bob" {
+      continue;
+    }
+  }
+
+  int x = 10;
+  int y = x++ + ++x - x--;
+
+  bool complex = (x > 5) && (y < 20) || (sum != 0);
+
+  User user = new User("John", 25);
+  string greeting = "Hello, " + user.name;
+
+  int[] processed = processArray<int>(numbers, factorial);
+}
+
+func createUser(name: string, age: int): User {
+  return new User(name, age);
+}
+
+func fibonacci(n: int): int {
+  if n <= 1 {
+    return n;
+  }
+
+  int a = 0;
+  int b = 1;
+
+  for(int i = 2; i <= n; i++) {
+    int temp = a + b;
+    a = b;
+    b = temp;
+  }
+
+  return b;
+}
+
+func testComplexExpressions(): void {
+  int a = 5;
+  int b = 10;
+  int c = 15;
+
+  bool result1 = a < b && b < c;
+  bool result2 = a == 5 || b == 20;
+  bool result3 = !(a > b);
+
+  int arithmetic = (a + b) * c - (a / 2);
+  float division = a / 2.0;
+
+  string text = "Value: " + a;
+
+  int conditional = a > b ? a : b;
+
+  int[] array = [a, b, c];
+  array[0] = array[1] + array[2];
+}
+
+int day = 2;
+
+try {
+  switch day {
+    case 1..5: {
+      print("weekday");
+    }
+    case 6 | 7: {
+      print("weekend");
+    }
+    default: {
+      print("invalid day");
+    }
+  }
+} catch (SyntaxError err) {
+  print(err);
+} finally {
+  print("finished!");
+}*/
+class Test extends OtherClass implements Interface1, Interface2 {
+
+};
