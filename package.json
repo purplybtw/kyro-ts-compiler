@@ -1,11 +1,14 @@
 {
-  "name": "nodejs",
+  "name": "Javon Language",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A language that mixes the styles of C and Java with TypeScript and Python.",
+  "main": "index.ts",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "javon": "npx tsx ./index.ts skipped",
+    "web": "npx tsx ./web/server.ts",
+    "build": "cd lib && npx node-gyp rebuild && cd .. && npx tsx index.ts built",
+    "__comment_on_build_script__": "echo cd .. is used for going back to project root."
   },
   "keywords": [],
   "author": "",

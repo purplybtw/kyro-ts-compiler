@@ -41,14 +41,15 @@ export function evaluateExpression(node: Node): number {
 
 async function main() {  
   const args = process.argv.slice(2);
+
   const jv_arguments: JV_RunnerArguments = {
     builtNative: args[0] as any,
   }
 
   const jv = new JavonInstance(
-    renderFileInput("./expression.jv"), 
+    renderFileInput("./tests/expression.jv"), 
     "process",
-    null, // handlers not needed -> running in process mode
+    null, // error/warn handlers not needed -> running in process mode
     jv_arguments
   );
   

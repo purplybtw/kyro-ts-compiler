@@ -10,8 +10,8 @@ import {
   SourceLocation,
   Expression,
   TypeReferenceKind,
-  ClassModifiers,
 } from "../ast/nodes";
+import { Modifiers } from "../ast/modifiers";
 import { LocalErrors, BaseError, FileInput } from "../util/errors";
 import type { MainConfig } from "../types/global";
 import { LocalWarnings } from "../util/warnings";
@@ -990,6 +990,8 @@ export class Parser {
     const classToken = this.current();
     this.advance();
 
+    const classModifiers = Modifiers.clone();
+
     const identifier = this.parseIdentifier();
     if (identifier instanceof BaseError) return identifier;
 
@@ -1055,6 +1057,7 @@ export class Parser {
 
     return new Nodes.ClassDeclaration(
       this.getSource(classToken),
+      modifiers,
       identifier,
       extending,
       implementing,

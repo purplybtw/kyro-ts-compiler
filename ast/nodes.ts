@@ -133,16 +133,6 @@ export function buildSourceLocation(pos: number, line: number, col: number): Sou
   return new SourceLocation(pos, line, col)
 }
 
-export interface ClassModifiers {
-  static: boolean,
-  access: Structures.PUBLIC | Structures.PRIVATE | Structures.PROTECTED,
-  immutable: Structures.FINAL | Structures.READONLY | null
-}
-
-export interface ClassConstructorModifiers {
-  access: Structures.PUBLIC | Structures.PRIVATE | Structures.PROTECTED,
-}
-
 export abstract class Node {
   constructor(public loc: SourceLocation) {}
   abstract type: NodeType
@@ -692,7 +682,7 @@ export class ClassDeclaration extends Node {
   type = "ClassDeclaration" as const
   constructor(
     loc: SourceLocation, 
-    public modifiers: ClassModifiers,
+    public modifiers: Modifiers,
     public identifier: Identifier, 
     public extending?: TypeReference, 
     public interfaces: TypeReference[] = [], 
@@ -706,7 +696,7 @@ export class ClassDeclaration extends Node {
 }
 
 export abstract class ClassMember extends Node {
-  constructor(loc: SourceLocation, public modifiers: ClassModifiers) {
+  constructor(loc: SourceLocation, public modifiers: Modifiers) {
     super(loc)
   }
 }
@@ -715,7 +705,7 @@ export class MethodDefinition extends ClassMember {
   type = "MethodDefinition" as const
   constructor(
     loc: SourceLocation, 
-    public modifiers: ClassModifiers, 
+    public modifiers: Modifiers, 
     public identifier: Identifier, 
     public generics: TypeReference[],
     public parameters: Parameter[], 
@@ -733,7 +723,7 @@ export class PropertyDefinition extends ClassMember {
   type = "PropertyDefinition" as const
   constructor(
     loc: SourceLocation, 
-    public modifiers: ClassModifiers,
+    public modifiers: Modifiers,
     public varType: TypeReference | ArrayType, 
     public identifier: Identifier, 
     public initializer?: Node,
@@ -749,7 +739,7 @@ export class Constructor extends ClassMember {
   type = "Constructor" as const
   constructor(
     loc: SourceLocation, 
-    public modifiers: ClassModifiers,
+    public modifiers: Modifiers,
     public parameters: Parameter[], 
     public body: Block,
   ) {
@@ -771,128 +761,72 @@ export class Super extends Node {
 }
 
 export const Nodes = {
-  NumberLiteral: NumberLiteral,
-  StringLiteral: StringLiteral,
-  BooleanLiteral: BooleanLiteral,
-  Identifier: Identifier,
-  BinaryExpression: BinaryExpression,
-  LogicalExpression: LogicalExpression,
-  ConditionalExpression: ConditionalExpression,
-  UnaryExpression: UnaryExpression,
-  UpdateExpression: UpdateExpression,
-  CallExpression: CallExpression,
-  MemberExpression: MemberExpression,
-  ArrayExpression: ArrayExpression,
-  VariableDeclaration: VariableDeclaration,
-  Assignment: Assignment,
-  ExpressionStatement: ExpressionStatement,
-  Block: Block,
-  IfStatement: IfStatement,
-  ElseIfStatement: ElseIfStatement,
-  WhileStatement: WhileStatement,
-  ForStatement: ForStatement,
-  ReturnStatement: ReturnStatement,
-  BreakStatement: BreakStatement,
-  ContinueStatement: ContinueStatement,
-  FunctionDeclaration: FunctionDeclaration,
-  TypeDeclaration: TypeDeclaration,
-  Parameter: Parameter,
-  TypeReference: TypeReference,
-  ArrayType: ArrayType,
-  UnionType: UnionType,
-  IntersectionType: IntersectionType,
-  Program: Program,
-  NewExpression: NewExpression,
-  ObjectExpression: ObjectExpression,
-  Property: Property,
-  MatchExpression: MatchExpression,
-  MatchArm: MatchArm,
-  SwitchStatement: SwitchStatement,
-  SwitchCase: SwitchCase,
-  Pattern: Pattern,
-  LiteralPattern: LiteralPattern,
-  RangePattern: RangePattern,
-  IdentifierPattern: IdentifierPattern,
-  BindingPattern: BindingPattern,
-  GuardedPattern: GuardedPattern,
-  CheckExpression: CheckExpression,
-  CheckComparison: CheckComparison,
-  RangeExpression: RangeExpression,
-  InferType: InferType,
-  VoidType: VoidType,
-  ThrowStatement: ThrowStatement,
-  TryStatement: TryStatement,
-  CatchClause: CatchClause,
-  FinallyClause: FinallyClause,
-  ClassDeclaration: ClassDeclaration,
-  ClassMember: ClassMember,
-  MethodDefinition: MethodDefinition,
-  PropertyDefinition: PropertyDefinition,
-  Constructor: Constructor,
-  Super: Super
+  NumberLiteral,
+  StringLiteral,
+  BooleanLiteral,
+  Identifier,
+  BinaryExpression,
+  LogicalExpression,
+  ConditionalExpression,
+  UnaryExpression,
+  UpdateExpression,
+  CallExpression,
+  MemberExpression,
+  ArrayExpression,
+  VariableDeclaration,
+  Assignment,
+  ExpressionStatement,
+  Block,
+  IfStatement,
+  ElseIfStatement,
+  WhileStatement,
+  ForStatement,
+  ReturnStatement,
+  BreakStatement,
+  ContinueStatement,
+  FunctionDeclaration,
+  TypeDeclaration,
+  Parameter,
+  TypeReference,
+  ArrayType,
+  UnionType,
+  IntersectionType,
+  Program,
+  NewExpression,
+  ObjectExpression,
+  Property,
+  MatchExpression,
+  MatchArm,
+  SwitchStatement,
+  SwitchCase,
+  Pattern,
+  LiteralPattern,
+  RangePattern,
+  IdentifierPattern,
+  BindingPattern,
+  GuardedPattern,
+  CheckExpression,
+  CheckComparison,
+  RangeExpression,
+  InferType,
+  VoidType,
+  ThrowStatement,
+  TryStatement,
+  CatchClause,
+  FinallyClause,
+  ClassDeclaration,
+  ClassMember,
+  MethodDefinition,
+  PropertyDefinition,
+  Constructor,
+  Super
 }
 
-export interface NodeTypes {
-  TypeReference: TypeReference,
-  NumberLiteral: NumberLiteral,
-  StringLiteral: StringLiteral,
-  BooleanLiteral: BooleanLiteral,
-  Identifier: Identifier,
-  BinaryExpression: BinaryExpression,
-  LogicalExpression: LogicalExpression,
-  ConditionalExpression: ConditionalExpression,
-  UnaryExpression: UnaryExpression,
-  UpdateExpression: UpdateExpression,
-  CallExpression: CallExpression,
-  MemberExpression: MemberExpression,
-  ArrayExpression: ArrayExpression,
-  VariableDeclaration: VariableDeclaration,
-  Assignment: Assignment,
-  ExpressionStatement: ExpressionStatement,
-  Block: Block,
-  IfStatement: IfStatement,
-  ElseIfStatement: ElseIfStatement,
-  WhileStatement: WhileStatement,
-  ForStatement: ForStatement,
-  ReturnStatement: ReturnStatement,
-  BreakStatement: BreakStatement,
-  ContinueStatement: ContinueStatement,
-  FunctionDeclaration: FunctionDeclaration,
-  TypeDeclaration: TypeDeclaration,
-  Parameter: Parameter,
-  ArrayType: ArrayType,
-  UnionType: UnionType,
-  IntersectionType: IntersectionType,
-  Program: Program,
-  NewExpression: NewExpression,
-  ObjectExpression: ObjectExpression,
-  Property: Property,
-  MatchExpression: MatchExpression,
-  MatchArm: MatchArm,
-  SwitchStatement: SwitchStatement,
-  SwitchCase: SwitchCase,
-  Pattern: Pattern,
-  LiteralPattern: LiteralPattern,
-  RangePattern: RangePattern,
-  IdentifierPattern: IdentifierPattern,
-  BindingPattern: BindingPattern,
-  GuardedPattern: GuardedPattern,
-  CheckExpression: CheckExpression,
-  CheckComparison: CheckComparison,
-  RangeExpression: RangeExpression,
-  InferType: InferType,
-  VoidType: VoidType,
-  ThrowStatement: ThrowStatement,
-  TryStatement: TryStatement,
-  CatchClause: CatchClause,
-  FinallyClause: FinallyClause,
-  ClassDeclaration: ClassDeclaration,
-  ClassMember: ClassMember,
-  MethodDefinition: MethodDefinition,
-  PropertyDefinition: PropertyDefinition,
-  Constructor: Constructor,
-  Super: Super
+export type NodeTypes = {
+  [K in keyof typeof Nodes]: InstanceType<typeof Nodes[K]>
 };
+
+type Modifiers = number;
 
 export type Expression =
   | NumberLiteral

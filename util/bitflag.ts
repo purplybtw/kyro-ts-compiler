@@ -134,6 +134,16 @@ export class BitFlag<T extends string = string> {
     return this.value;
   }
 
+  getNumberValue(): number {
+    if(this.useBigInt) throw new Error("Cannot get number value from big int flag");
+    return this.value as number;
+  }
+
+  getBigIntValue(): bigint {
+    if(!this.useBigInt) throw new Error("Cannot get big int value from number flag");
+    return this.value as bigint;
+  }
+
   setValue(value: number | bigint): BitFlag<T> {
     this.value = value;
     return this;
