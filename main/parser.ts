@@ -11,10 +11,11 @@ import {
   Expression,
   TypeReferenceKind,
 } from "../ast/nodes";
-import { Modifiers } from "../ast/modifiers";
+import { accessModifiers, allModifiers, immutabilityModifiers, Modifiers } from "../ast/modifiers";
 import { LocalErrors, BaseError, FileInput } from "../util/errors";
 import type { MainConfig } from "../types/global";
 import { LocalWarnings } from "../util/warnings";
+import { ModifierFlags, ModifierName } from "../ast/modifiers";
 
 /* MISSING IMPLEMENTATIONS TO COMPLETE:
 x- Implement missing control flow (for, while, functions)
@@ -37,6 +38,7 @@ export class Parser {
   private file: FileInput;
   private recursionDepth = 0;
   private maxRecursionDepth = 1000; // Configurable limit
+  private current: Token = this.tokens[0];
 
   constructor(c: MainConfig) {
     this.errors = c.errors;
@@ -62,7 +64,7 @@ export class Parser {
 
   private getSource(token: Token | null = null): SourceLocation {
     if (!token) {
-      token = this.current();
+      token = this.current;
     }
 
     if (!token) {
@@ -83,10 +85,11 @@ export class Parser {
 
   parse(tokens: Token[]): Program | BaseError {
     this.tokens = tokens;
+    this.current = this.tokens[0];
     const body: Node[] = [];
     let hasErrors = false;
 
-    while (this.current() && this.current()?.type !== TokenType.EOF) {
+    while (this.current && this.current.type !== TokenType.EOF) {
       const statement = this.parseStatement();
 
       if (statement instanceof BaseError) {
@@ -116,7 +119,7 @@ export class Parser {
     while (!this.outOfBounds()) {
       if (this.previous()?.type === TokenType.SEMICOLON) return;
 
-      const current = this.current();
+      const current = this.current;
       if (current?.type === TokenType.KEYWORD) {
         switch (current.value) {
           case "class":
@@ -130,6 +133,7 @@ export class Parser {
           case "float":
           case "bool":
           case "char":
+          case "void": 
             return;
         }
       }
@@ -152,18 +156,20 @@ export class Parser {
 
   private parseStatement(): ParseResult<Node> | null {
     while (
-      this.current() &&
-      this.current()?.type != TokenType.UNKNOWN &&
-      this.current()?.type != TokenType.EOF
+      this.current &&
+      this.current.type != TokenType.UNKNOWN &&
+      this.current.type != TokenType.EOF
     ) {
-      const current = this.current();
+      const current = this.current;
 
-      switch (current?.type) {
+      switch (current.type) {
         case TokenType.SEMICOLON: {
           this.advance();
           continue;
         }
         case TokenType.KEYWORD: {
+          // Variables
+
           if (
             current.value === Others.CONST ||
             current.value === Others.INFER ||
@@ -175,6 +181,7 @@ export class Parser {
             }
             return varDecl;
           }
+
 
           // Control Flow
 
@@ -210,14 +217,28 @@ export class Parser {
             return this.parseSwitchStatement();
           }
 
+          // Modifiers
+
+          console.log("Parsing modifiers in statement...")
+
+          const modifiers = this.parseModifiers(allModifiers);
+
+          if(modifiers instanceof BaseError) return modifiers;
+
+          const newCurrent = this.current;
+
+          console.log("Checking new current token after modifiers for structures...", newCurrent)
+
           // Structures
 
-          if (current.value === Structures.FUNC) {
-            return this.parseFuncDeclaration();
+          if (newCurrent.value === Structures.FUNC) {
+            console.log("its a function!");
+            return this.parseFuncDeclaration(modifiers);
           }
 
-          if (current.value === Structures.CLASS) {
-            return this.parseClassDeclaration();
+          if (newCurrent.value === Structures.CLASS) {
+            console.log("its a class!")
+            return this.parseClassDeclaration(modifiers);
           }
 
           /*
@@ -266,7 +287,7 @@ export class Parser {
           const left = this.parseLeftHandSideExpression();
           if (left instanceof BaseError) return left;
 
-          const currentType = this.current()?.type;
+          const currentType = this.current.type;
           if (
             currentType === TokenType.ASSIGNMENT ||
             currentType === TokenType.PLUS_ASSIGN ||
@@ -330,12 +351,12 @@ export class Parser {
       }
     }
 
-    if (!this.current() || this.current()?.type === TokenType.EOF) {
+    if (!this.current || this.current.type === TokenType.EOF) {
       return null;
     }
 
     return this.errors.UnexpectedTokenError.throw(
-      `Unknown token '${this.current().value}'`,
+      `Unknown token '${this.current.value}'`,
       this.file,
       this.getSource(),
     );
@@ -345,7 +366,7 @@ export class Parser {
     const recursionError = this.enterRecursion();
     if (recursionError) return recursionError;
     
-    const first = this.current();
+    const first = this.current;
 
     if (!this.consume(TokenType.LBRACE)) {
       this.exitRecursion();
@@ -359,9 +380,9 @@ export class Parser {
     let statements: Node[] = [];
 
     while (
-      this.current() &&
-      this.current()?.type !== TokenType.RBRACE &&
-      this.current()?.type !== TokenType.EOF
+      this.current &&
+      this.current.type !== TokenType.RBRACE &&
+      this.current.type !== TokenType.EOF
     ) {
       const statement = this.parseStatement();
       if (statement instanceof BaseError) return statement;
@@ -383,7 +404,7 @@ export class Parser {
   }
 
   private parseElseIfStatement(): ParseResult<NodeTypes["ElseIfStatement"]> {
-    const elifToken = this.current();
+    const elifToken = this.current;
     this.advance();
 
     let condition = this.parseExpression();
@@ -400,7 +421,7 @@ export class Parser {
   }
 
   private parseBreakStatement(): ParseResult<NodeTypes["BreakStatement"]> {
-    const first = this.current();
+    const first = this.current;
     this.advance();
 
     if (!this.consume(TokenType.SEMICOLON)) {
@@ -417,7 +438,7 @@ export class Parser {
   private parseContinueStatement(): ParseResult<
     NodeTypes["ContinueStatement"]
   > {
-    const first = this.current();
+    const first = this.current;
     this.advance();
 
     if (!this.consume(TokenType.SEMICOLON)) {
@@ -432,7 +453,7 @@ export class Parser {
   }
 
   private parseIfStatement(): ParseResult<NodeTypes["IfStatement"]> {
-    const ifToken = this.current();
+    const ifToken = this.current;
     this.advance();
 
     let condition = this.parseExpression();
@@ -445,8 +466,8 @@ export class Parser {
     let elseBlock: NodeTypes["Block"] | undefined = undefined;
 
     while (
-      this.current().type === TokenType.KEYWORD &&
-      this.current().value === "elif"
+      this.current.type === TokenType.KEYWORD &&
+      this.current.value === "elif"
     ) {
       const newElif = this.parseElseIfStatement();
       if (newElif instanceof BaseError) return newElif;
@@ -455,8 +476,8 @@ export class Parser {
     }
 
     if (
-      this.current().type === TokenType.KEYWORD &&
-      this.current().value === "else"
+      this.current.type === TokenType.KEYWORD &&
+      this.current.value === "else"
     ) {
       this.advance();
       const evalElseBlock = this.parseBlock();
@@ -477,7 +498,7 @@ export class Parser {
   }
 
   private parseCatchClause(): ParseResult<NodeTypes["CatchClause"]> {
-    const catchToken = this.current();
+    const catchToken = this.current;
     this.advance();
 
     this.consume(TokenType.LPAREN);
@@ -510,7 +531,7 @@ export class Parser {
   }
 
   private parseThrowStatement(): ParseResult<NodeTypes["ThrowStatement"]> {
-    const throwToken = this.current();
+    const throwToken = this.current;
     this.advance();
 
     const newExp = this.parseNewExpression();
@@ -520,7 +541,7 @@ export class Parser {
   }
 
   private parseFinallyClause(): ParseResult<NodeTypes["FinallyClause"]> {
-    const finallyToken = this.current();
+    const finallyToken = this.current;
     this.advance();
 
     const finallyBlock = this.parseBlock();
@@ -530,7 +551,7 @@ export class Parser {
   }
 
   private parseTryStatement(): ParseResult<NodeTypes["TryStatement"]> {
-    const tryToken = this.current();
+    const tryToken = this.current;
     this.advance();
 
     const tryBlock = this.parseBlock();
@@ -551,7 +572,7 @@ export class Parser {
   }
 
   private parseWhileStatement(): ParseResult<NodeTypes["WhileStatement"]> {
-    const whileToken = this.current();
+    const whileToken = this.current;
     this.advance();
 
     let condition = this.parseExpression();
@@ -570,7 +591,7 @@ export class Parser {
   }
 
   private parseForStatement(): ParseResult<NodeTypes["ForStatement"]> {
-    const forToken = this.current();
+    const forToken = this.current;
     this.advance();
 
     if (!this.consume(TokenType.LPAREN)) {
@@ -600,11 +621,11 @@ export class Parser {
       | NodeTypes["Assignment"]
       | undefined = undefined;
 
-    if (this.current()?.type !== TokenType.RPAREN) {
+    if (this.current.type !== TokenType.RPAREN) {
       const leftExpr = this.parseLeftHandSideExpression();
       if (leftExpr instanceof BaseError) return leftExpr;
 
-      const current = this.current();
+      const current = this.current;
       if (
         current?.type === TokenType.ASSIGNMENT ||
         current?.type === TokenType.PLUS_ASSIGN ||
@@ -612,7 +633,7 @@ export class Parser {
         current?.type === TokenType.MULTIPLY_ASSIGN ||
         current?.type === TokenType.DIVIDE_ASSIGN
       ) {
-        const assignmentToken = this.current();
+        const assignmentToken = this.current;
         const isCompound = assignmentToken.type !== TokenType.ASSIGNMENT;
 
         this.advance();
@@ -703,7 +724,7 @@ export class Parser {
   }
 
   private parseLiteralPattern(): ParseResult<NodeTypes["LiteralPattern"]> {
-    const patternToken = this.current();
+    const patternToken = this.current;
     this.advance();
 
     if (patternToken?.type === TokenType.STRING) {
@@ -740,7 +761,7 @@ export class Parser {
   }
 
   private parseRangePattern(): ParseResult<NodeTypes["RangePattern"]> {
-    const startToken = this.current();
+    const startToken = this.current;
     this.advance();
 
     if (!this.consume(TokenType.DOT_DOT)) {
@@ -751,7 +772,7 @@ export class Parser {
       );
     }
 
-    const endToken = this.current();
+    const endToken = this.current;
 
     if (
       startToken?.type === TokenType.NUMBER &&
@@ -781,7 +802,7 @@ export class Parser {
   private parsePattern(
     allowGuards: boolean = true,
   ): ParseResult<NodeTypes["Pattern"]> {
-    const patternToken = this.current();
+    const patternToken = this.current;
 
     // Check for range pattern FIRST (1..5)
     if (
@@ -817,7 +838,7 @@ export class Parser {
     if (firstPattern instanceof BaseError) return firstPattern;
     patterns.push(firstPattern);
 
-    while (this.current() && this.current()?.type === TokenType.PIPE) {
+    while (this.current && this.current.type === TokenType.PIPE) {
       this.advance();
       const pattern = this.parsePattern(allowGuards);
       if (pattern instanceof BaseError) return pattern;
@@ -828,7 +849,7 @@ export class Parser {
   }
 
   private parseSwitchStatement(): ParseResult<NodeTypes["SwitchStatement"]> {
-    const switchToken = this.current();
+    const switchToken = this.current;
     this.advance();
 
     const scrutinee = this.parseExpression();
@@ -846,11 +867,11 @@ export class Parser {
     let defaultCase: NodeTypes["Block"] | undefined = undefined;
 
     while (
-      this.current() &&
-      this.current()?.type !== TokenType.RBRACE &&
-      this.current()?.type !== TokenType.EOF
+      this.current &&
+      this.current.type !== TokenType.RBRACE &&
+      this.current.type !== TokenType.EOF
     ) {
-      const caseToken = this.current();
+      const caseToken = this.current;
 
       if (this.checkToken(TokenType.KEYWORD, ControlFlow.CASE, caseToken)) {
         this.advance();
@@ -910,62 +931,163 @@ export class Parser {
     );
   }
 
-  private parseAccessModifier(): ParseResult<ClassModifiers["access"]> {
-    const memberToken = this.current();
-    
-    if (
-      !this.consume(TokenType.KEYWORD)
-    ) {
-      return this.errors.SyntaxError.throw(
-        `Expected access modifier`,
-        this.file,
-        this.getSource(),
-      )
-    }
+  private parseModifiers(allowed: Set<ModifierName>): ParseResult<typeof Modifiers> {
+    const parsed = Modifiers.clone();
+  
+    while (this.current.type === TokenType.KEYWORD) {
+      const mod = this.current.value.toUpperCase() as ModifierName;
+      // to uppercase being used here doesn't matter because KEYWORD 
+      // token type only accepts the specific lower case versions of the keywords.
+      console.log('[parser] parseModifiers: current=', this.current);
 
-    switch(memberToken.value) {
-      case Structures.PRIVATE:   return Structures.PRIVATE;
-      case Structures.PUBLIC:    return Structures.PUBLIC;
-      case Structures.PROTECTED: return Structures.PROTECTED;
-      default:
+      if (!allowed.has(mod)) break;
+
+      if (
+        (accessModifiers.has(mod as any) && parsed.hasAnySet(accessModifiers)) ||
+        (immutabilityModifiers.has(mod as any) && parsed.hasAnySet(immutabilityModifiers))
+      ) {
         return this.errors.SyntaxError.throw(
-          `Expected access modifier`,
+          `Conflicting modifier '${mod}'`,
           this.file,
           this.getSource(),
-        )
+        );
+      }
+
+      parsed.set(mod);
+      this.advance();
     }
+  
+    console.log('[parser] parseModifiers: done flags=', parsed.getNumberValue(), 'next current=', this.current);
+    return parsed;
   }
-
-  private parseImmutableType(): ParseResult<ClassModifiers["immutable"]> {
-    if(this.consumeValue(TokenType.KEYWORD, Structures.READONLY))
-      return Structures.READONLY;
-
-    if(this.consumeValue(TokenType.KEYWORD, Structures.FINAL))
-      return Structures.FINAL;
-
-    return null;
-  }
+  
 
   private parseClassMember(
     classIdentifier: NodeTypes["Identifier"]
   ): ParseResult<NodeTypes["ClassMember"]> {
-    const memberToken = this.current();
+    const memberToken = this.current;
 
-    let access = this.parseAccessModifier();
+    let memberModifiers = this.parseModifiers(allModifiers);
 
-    if(access instanceof BaseError) return access;
-
-    let isStatic = this.consumeValue(TokenType.KEYWORD, Structures.STATIC);
-
-    let immutableType = this.parseImmutableType();
-
-    if(immutableType instanceof BaseError) return immutableType;
-
-    if(
-      this.checkToken(TokenType.IDENTIFIER, classIdentifier.name) && this.next()?.type === TokenType.LPAREN
+    if(memberModifiers instanceof BaseError) return memberModifiers;      
+    
+    console.log('[parser] parseClassMember: current=', this.current, 'next=', this.next(), 'next2=', this.next(1));
+    if (
+      this.current.type === TokenType.IDENTIFIER && (
+        this.next()?.type === TokenType.LPAREN || this.next()?.type === TokenType.COMPARISON
+      )
     ) {
-      // Constructor parsing
-      
+      // parse method
+
+      let identifier = this.parseIdentifier();
+
+      if(identifier instanceof BaseError) return identifier;
+
+      const generics = this.parseGenerics();
+
+      if(generics instanceof BaseError) return generics;
+
+      const parameters = this.parseParameterList();
+
+      if(parameters instanceof BaseError) return parameters;
+
+      if(identifier.name === classIdentifier.name) {
+        // Constructor parsing
+        if(memberModifiers.has("ASYNC")) {
+          this.errors.SyntaxError.throw(
+            "Constructors can't be asynchronous",
+            this.file,
+            this.getSource()
+          )
+        }
+
+        const body = this.parseBlock();
+
+        if(body instanceof BaseError) return body;
+
+        const __ctor = new Nodes.Constructor(
+          this.getSource(),
+          memberModifiers.getNumberValue(),
+          parameters,
+          body
+        )
+        console.log('[parser] parseClassMember: parsed Constructor');
+        return __ctor;
+      } else {
+        if (!this.consume(TokenType.COLON)) {
+          return this.errors.SyntaxError.throw(
+            `Expected ':' after parameter list in func declaration`,
+            this.file,
+            this.getSource(),
+          );
+        }
+    
+        const returnType = this.parseFunctionTypeReference();
+        
+        if (returnType instanceof BaseError) return returnType;
+
+        const body = this.parseBlock();
+
+        if(body instanceof BaseError) return body;
+
+        const __method = new Nodes.MethodDefinition(
+          this.getSource(),
+          memberModifiers.getNumberValue(),
+          identifier,
+          generics,
+          parameters,
+          returnType,
+          body
+        )
+        console.log('[parser] parseClassMember: parsed MethodDefinition');
+        return __method;
+      }
+    } else if (
+      this.current.value === Others.INFER ||
+      Object.values(DataTypes).includes(this.current.value as any)
+    ) {
+      // parse property
+  
+      const varType = this.parseVariableType();
+
+      if (varType instanceof BaseError) return varType;
+
+      let identifier = this.parseIdentifier();
+
+      if(identifier instanceof BaseError) return identifier;
+
+      let initializer: Node | undefined = undefined;
+
+      if (this.current.type === TokenType.ASSIGNMENT) {
+        this.advance();
+        const expr = this.parseExpression();
+        if (expr instanceof BaseError) return expr;
+        initializer = expr;
+      }
+
+      if (!this.consume(TokenType.SEMICOLON)) {
+        return this.errors.SyntaxError.throw(
+          `Expected ';' after variable declaration`,
+          this.file,
+          this.getSource(),
+        );
+      }
+
+      const __prop = new Nodes.PropertyDefinition(
+        this.getSource(memberToken),
+        memberModifiers.getNumberValue(),
+        varType,
+        identifier,
+        initializer,
+      );
+      console.log('[parser] parseClassMember: parsed PropertyDefinition');
+      return __prop;
+    } else {
+      return this.errors.SyntaxError.throw(
+        "Unexpected token for class member definition",
+        this.file,
+        this.getSource()
+      )
     }
   }
 
@@ -973,24 +1095,39 @@ export class Parser {
     classIdentifier: NodeTypes["Identifier"]
   ): ParseResult<NodeTypes["ClassMember"][]> {
     const members: NodeTypes["ClassMember"][] = [];
-
-    /*while (this.current() && this.current()?.type !== TokenType.RBRACE) {
-      
-    }*/
-    return this.errors.SyntaxError.throw(
-      `class body not implemented`,
-      this.file,
-      this.getSource(),
-    )
+    console.log('[parser] parseClassBody: expect LBRACE current=', this.current);
+    if (!this.consume(TokenType.LBRACE)) {
+      return this.errors.SyntaxError.throw(
+        `Expected '{'`,
+        this.file,
+        this.getSource(),
+      );
+    }
+    
+    while (this.current && this.current.type !== TokenType.RBRACE && this.current.type !== TokenType.EOF) {
+      console.log('[parser] parseClassBody: member loop current=', this.current);
+      const member = this.parseClassMember(classIdentifier);
+      if (member instanceof BaseError) return member;
+      members.push(member);
+    }
+  
+    if (!this.consume(TokenType.RBRACE)) {
+      return this.errors.SyntaxError.throw(
+        `Expected '}'`,
+        this.file,
+        this.getSource(),
+      );
+    }
+  
+    console.log('[parser] parseClassBody: done members=', members.length);
+    return members;
   }
 
-  private parseClassDeclaration(): ParseResult<
+  private parseClassDeclaration(modifiers: typeof Modifiers): ParseResult<
     BaseError | NodeTypes["ClassDeclaration"]
   > {
-    const classToken = this.current();
+    const classToken = this.current;
     this.advance();
-
-    const classModifiers = Modifiers.clone();
 
     const identifier = this.parseIdentifier();
     if (identifier instanceof BaseError) return identifier;
@@ -1035,32 +1172,17 @@ export class Parser {
       );
     }
 
-    if (!this.consume(TokenType.LBRACE)) {
-      return this.errors.SyntaxError.throw(
-        `Expected '{'`,
-        this.file,
-        this.getSource(),
-      );
-    }
-
     const classBody = this.parseClassBody(identifier);
 
     if (classBody instanceof BaseError) return classBody;
 
-    if (!this.consume(TokenType.RBRACE)) {
-      return this.errors.SyntaxError.throw(
-        `Expected '}'`,
-        this.file,
-        this.getSource(),
-      );
-    }
-
     return new Nodes.ClassDeclaration(
       this.getSource(classToken),
-      modifiers,
+      modifiers.getNumberValue(),
       identifier,
       extending,
       implementing,
+      classBody
     );
   }
 
@@ -1074,22 +1196,25 @@ export class Parser {
     }
 
     const parameters: NodeTypes["Parameter"][] = [];
-    while (this.current() && this.current()?.type !== TokenType.RPAREN) {
+    while (this.current && this.current.type !== TokenType.RPAREN) {
       const parameter = this.parseParameter();
       if (parameter instanceof BaseError) return parameter;
 
       parameters.push(parameter);
 
-      if (this.current()?.type === TokenType.COMMA) {
+      if (this.current.type === TokenType.COMMA) {
         this.advance();
-      } else if (this.current()?.type !== TokenType.RPAREN) {
-        return this.errors.SyntaxError.throw(
-          `Expected ',' or ')' in parameter list`,
-          this.file,
-          this.getSource(),
-        );
       }
     }
+
+    if (!this.consume(TokenType.RPAREN)) {
+      return this.errors.SyntaxError.throw(
+        `Expected ',' or ')' in parameter list`,
+        this.file,
+        this.getSource(),
+      );
+    }
+
     return parameters;
   }
 
@@ -1103,29 +1228,32 @@ export class Parser {
     }
 
     const parameters: Node[] = [];
-    while (this.current() && this.current()?.type !== TokenType.RPAREN) {
+    while (this.current && this.current.type !== TokenType.RPAREN) {
       const parameter = this.parseExpression();
       if (parameter instanceof BaseError) return parameter;
 
       parameters.push(parameter);
 
-      if (this.current()?.type === TokenType.COMMA) {
+      if (this.current.type === TokenType.COMMA) {
         this.advance();
-      } else if (this.current()?.type !== TokenType.RPAREN) {
-        return this.errors.SyntaxError.throw(
-          `Expected ',' or ')' in parameter list`,
-          this.file,
-          this.getSource(),
-        );
       }
     }
+
+    if(!this.consume(TokenType.RPAREN)) {
+      return this.errors.SyntaxError.throw(
+        `Expected ',' or ')' in parameter list`,
+        this.file,
+        this.getSource(),
+      );
+    }
+
     return parameters;
   }
 
-  private parseFuncDeclaration(): ParseResult<
+  private parseFuncDeclaration(modifiers: typeof Modifiers): ParseResult<
     NodeTypes["FunctionDeclaration"]
   > {
-    const funcToken = this.current();
+    const funcToken = this.current;
     this.advance();
 
     const identifier = this.parseIdentifier();
@@ -1133,8 +1261,8 @@ export class Parser {
 
     let generics: NodeTypes["TypeReference"][] = [];
     if (
-      this.current()?.type === TokenType.COMPARISON &&
-      this.current()?.value === "<"
+      this.current.type === TokenType.COMPARISON &&
+      this.current.value === "<"
     ) {
       const parsedGenerics = this.parseGenerics();
       if (parsedGenerics instanceof BaseError) return parsedGenerics;
@@ -1179,7 +1307,7 @@ export class Parser {
   private parseCallExpression(
     memberContext: NodeTypes["MemberExpression"] | null = null,
   ): ParseResult<NodeTypes["CallExpression"]> {
-    const calleeToken = this.current();
+    const calleeToken = this.current;
     let identifier: Node;
 
     if (memberContext === null) {
@@ -1195,8 +1323,8 @@ export class Parser {
     let generics: NodeTypes["TypeReference"][] = [];
 
     if (
-      this.current().type === TokenType.COMPARISON &&
-      this.current().value === "<"
+      this.current.type === TokenType.COMPARISON &&
+      this.current.value === "<"
     ) {
       const parsedGenerics = this.parseGenerics();
 
@@ -1225,14 +1353,14 @@ export class Parser {
   }
 
   private parseReturnStatement(): ParseResult<NodeTypes["ReturnStatement"]> {
-    const returnToken = this.current();
+    const returnToken = this.current;
     this.advance();
 
     let argument: Node | undefined = undefined;
 
     if (
-      this.current()?.type !== TokenType.SEMICOLON &&
-      this.current()?.type !== TokenType.EOF
+      this.current.type !== TokenType.SEMICOLON &&
+      this.current.type !== TokenType.EOF
     ) {
       const expr = this.parseExpression();
       if (expr instanceof BaseError) return expr;
@@ -1256,7 +1384,7 @@ export class Parser {
       | NodeTypes["MemberExpression"]
       | NodeTypes["ArrayExpression"],
   ): ParseResult<NodeTypes["Assignment"]> {
-    const assignmentToken = this.current();
+    const assignmentToken = this.current;
 
     const isCompound =
       assignmentToken.type === TokenType.PLUS_ASSIGN ||
@@ -1300,7 +1428,7 @@ export class Parser {
   private parseFunctionTypeReference(): ParseResult<
     NodeTypes["TypeReference"] | NodeTypes["ArrayType"] | NodeTypes["VoidType"]
   > {
-    const current = this.current();
+    const current = this.current;
     if (current?.type === TokenType.KEYWORD && current.value === Others.VOID) {
       this.advance();
       return new Nodes.VoidType(this.getSource(current));
@@ -1310,18 +1438,11 @@ export class Parser {
 
   private parseGenerics(): ParseResult<NodeTypes["TypeReference"][]> {
     const generics: NodeTypes["TypeReference"][] = [];
-    if (!this.consume(TokenType.COMPARISON) && this.current().value === "<") {
-      return this.errors.SyntaxError.throw(
-        `Expected '<' before generic definition`,
-        this.file,
-        this.getSource(),
-      );
+    if (!this.consumeValue(TokenType.COMPARISON, "<")) {
+      return [];
     }
-
     while (
-      this.current() &&
-      this.current()?.type !== TokenType.COMPARISON &&
-      this.current().value !== ">"
+      !this.checkToken(TokenType.COMPARISON, ">")
     ) {
       const generic = this.parseTypeReference(TypeReferenceKind.ANY, true);
       if (generic instanceof BaseError) return generic;
@@ -1330,10 +1451,10 @@ export class Parser {
         generics.push(generic.elementType);
       } else generics.push(generic);
 
-      if (this.current()?.type === TokenType.COMMA) this.advance();
+      if (this.current.type === TokenType.COMMA) this.advance();
     }
 
-    if (!this.consume(TokenType.COMPARISON) && this.current().value === ">") {
+    if (!this.consume(TokenType.COMPARISON) && this.current.value === ">") {
       return this.errors.SyntaxError.throw(
         `Expected '>' after generic definition`,
         this.file,
@@ -1356,7 +1477,7 @@ export class Parser {
     kind: TypeReferenceKind,
     allowArrays: boolean = true,
   ): ParseResult<NodeTypes["TypeReference"] | NodeTypes["ArrayType"]> {
-    const current = this.current();
+    const current = this.current;
     let baseType: NodeTypes["TypeReference"];
 
     if (
@@ -1384,8 +1505,8 @@ export class Parser {
     } else if (current?.type === TokenType.IDENTIFIER) {
       this.advance();
       const generics =
-        this.current()?.type === TokenType.COMPARISON &&
-        this.current().value === "<"
+        this.current.type === TokenType.COMPARISON &&
+        this.current.value === "<"
           ? this.parseGenerics()
           : [];
 
@@ -1406,7 +1527,7 @@ export class Parser {
     }
 
     if (
-      this.current()?.type === TokenType.LBRACKET &&
+      this.current.type === TokenType.LBRACKET &&
       this.next()?.type === TokenType.RBRACKET
     ) {
       if (!allowArrays) {
@@ -1427,7 +1548,7 @@ export class Parser {
   }
 
   private parseIdentifier(): ParseResult<NodeTypes["Identifier"]> {
-    const current = this.current();
+    const current = this.current;
 
     if (current?.type === TokenType.IDENTIFIER) {
       this.advance();
@@ -1441,15 +1562,13 @@ export class Parser {
     );
   }
 
-  private parseVariableDeclaration(): ParseResult<
-    NodeTypes["VariableDeclaration"]
+  private parseVariableType(): ParseResult<
+    NodeTypes["TypeReference"]
+    | NodeTypes["InferType"]
+    | NodeTypes["ArrayType"]
   > {
-    const first = this.current();
-
-    const isConstant = this.consumeValue(TokenType.KEYWORD, Others.CONST);
-
     let type:
-      | NodeTypes["TypeReference"]
+      NodeTypes["TypeReference"]
       | NodeTypes["InferType"]
       | NodeTypes["ArrayType"]
       | null = null;
@@ -1463,13 +1582,27 @@ export class Parser {
       type = parsedType;
     }
 
+    return type;
+  }
+
+  private parseVariableDeclaration(): ParseResult<
+    NodeTypes["VariableDeclaration"]
+  > {
+    const first = this.current;
+
+    const isConstant = this.consumeValue(TokenType.KEYWORD, Others.CONST);
+
+    let type = this.parseVariableType();
+
+    if(type instanceof BaseError) return type;
+
     const identifiers: NodeTypes["Identifier"][] = [];
 
     const firstIdentifier = this.parseIdentifier();
     if (firstIdentifier instanceof BaseError) return firstIdentifier;
     identifiers.push(firstIdentifier);
 
-    while (this.current()?.type === TokenType.COMMA) {
+    while (this.current.type === TokenType.COMMA) {
       this.advance();
       const nextIdentifier = this.parseIdentifier();
       if (nextIdentifier instanceof BaseError) return nextIdentifier;
@@ -1478,7 +1611,7 @@ export class Parser {
 
     let initializer: Node | undefined = undefined;
 
-    if (this.current()?.type === TokenType.ASSIGNMENT) {
+    if (this.current.type === TokenType.ASSIGNMENT) {
       this.advance();
       const expr = this.parseExpression();
       if (expr instanceof BaseError) return expr;
@@ -1513,7 +1646,7 @@ export class Parser {
     if (expr instanceof BaseError) return expr;
 
     while (true) {
-      const current = this.current();
+      const current = this.current;
 
       if (current?.type === TokenType.DOT) {
         this.advance();
@@ -1561,7 +1694,7 @@ export class Parser {
     let expr = this.parseLogicalOrExpression();
     if (expr instanceof BaseError) return expr;
 
-    if (this.current()?.type === TokenType.QUESTION) {
+    if (this.current.type === TokenType.QUESTION) {
       this.advance();
       const consequent = this.parseExpression();
       if (consequent instanceof BaseError) return consequent;
@@ -1592,8 +1725,8 @@ export class Parser {
     let left = this.parseLogicalAndExpression();
     if (left instanceof BaseError) return left;
 
-    while (this.current()?.type === TokenType.LOGICAL_OR) {
-      const operator = this.current();
+    while (this.current.type === TokenType.LOGICAL_OR) {
+      const operator = this.current;
       this.advance();
 
       const right = this.parseLogicalAndExpression();
@@ -1614,8 +1747,8 @@ export class Parser {
     let left = this.parseEqualityExpression();
     if (left instanceof BaseError) return left;
 
-    while (this.current()?.type === TokenType.LOGICAL_AND) {
-      const operator = this.current();
+    while (this.current.type === TokenType.LOGICAL_AND) {
+      const operator = this.current;
       this.advance();
 
       const right = this.parseEqualityExpression();
@@ -1637,10 +1770,10 @@ export class Parser {
     if (left instanceof BaseError) return left;
 
     while (
-      this.current()?.type === TokenType.COMPARISON &&
-      (this.current()?.value === "==" || this.current()?.value === "!=")
+      this.current.type === TokenType.COMPARISON &&
+      (this.current.value === "==" || this.current.value === "!=")
     ) {
-      const operator = this.current();
+      const operator = this.current;
       this.advance();
 
       const right = this.parseRelationalExpression();
@@ -1662,10 +1795,10 @@ export class Parser {
     if (left instanceof BaseError) return left;
 
     while (
-      this.current()?.type === TokenType.COMPARISON &&
-      ["<", ">", "<=", ">="].includes(this.current()?.value || "")
+      this.current.type === TokenType.COMPARISON &&
+      ["<", ">", "<=", ">="].includes(this.current.value || "")
     ) {
-      const operator = this.current();
+      const operator = this.current;
       this.advance();
 
       const right = this.parseAdditionExpression();
@@ -1687,10 +1820,10 @@ export class Parser {
     if (left instanceof BaseError) return left;
 
     while (
-      this.current()?.type === TokenType.PLUS ||
-      this.current()?.type === TokenType.MINUS
+      this.current.type === TokenType.PLUS ||
+      this.current.type === TokenType.MINUS
     ) {
-      const operator = this.current();
+      const operator = this.current;
       this.advance();
 
       const right = this.parseMultiplicationExpression();
@@ -1712,10 +1845,10 @@ export class Parser {
     if (left instanceof BaseError) return left;
 
     while (
-      this.current()?.type === TokenType.ASTERISK ||
-      this.current()?.type === TokenType.SLASH
+      this.current.type === TokenType.ASTERISK ||
+      this.current.type === TokenType.SLASH
     ) {
-      const operator = this.current();
+      const operator = this.current;
       this.advance();
 
       const right = this.parseUnaryExpression();
@@ -1733,7 +1866,7 @@ export class Parser {
   }
 
   private parseUnaryExpression(): ParseResult<Node> {
-    const current = this.current();
+    const current = this.current;
 
     if (
       current?.type === TokenType.INCREMENT ||
@@ -1790,7 +1923,7 @@ export class Parser {
   ): boolean {
     if (token != null) return token.type === type && token.value === value;
 
-    return this.current()?.type === type && this.current()?.value === value;
+    return this.current.type === type && this.current.value === value;
   }
 
   /** Expressions that can be followed by a postfix operator (++, --, ., [], ())
@@ -1799,8 +1932,8 @@ export class Parser {
     let expr = this.parsePrimaryExpression();
     if (expr instanceof BaseError) return expr;
 
-    while (this.current() && this.current()?.type !== TokenType.EOF) {
-      const current = this.current();
+    while (this.current && this.current.type !== TokenType.EOF) {
+      const current = this.current;
 
       if (current?.type === TokenType.DOT) {
         this.advance();
@@ -1831,7 +1964,7 @@ export class Parser {
         const parsedGenerics = this.parseGenerics();
         if (parsedGenerics instanceof BaseError) return parsedGenerics;
 
-        if (this.current()?.type !== TokenType.LPAREN) {
+        if (this.current.type !== TokenType.LPAREN) {
           return this.errors.SyntaxError.throw(
             `Expected '(' after generics in call expression`,
             this.file,
@@ -1902,12 +2035,12 @@ export class Parser {
   }
 
   private parseArrayExpression(): ParseResult<NodeTypes["ArrayExpression"]> {
-    const first = this.current();
+    const first = this.current;
     this.advance();
 
     const elements: Node[] = [];
 
-    while (this.current()?.type != TokenType.RBRACKET) {
+    while (this.current.type != TokenType.RBRACKET) {
       const element = this.parseExpression();
       if (element instanceof BaseError) return element;
       elements.push(element);
@@ -1926,7 +2059,7 @@ export class Parser {
   }
 
   private parsePrimaryExpression(): ParseResult<Node> {
-    const current = this.current();
+    const current = this.current;
 
     if (current?.type === TokenType.LBRACKET) {
       return this.parseArrayExpression();
@@ -1993,7 +2126,7 @@ export class Parser {
   }
 
   private parseNewExpression(): ParseResult<NodeTypes["NewExpression"]> {
-    const newToken = this.current();
+    const newToken = this.current;
     this.advance();
 
     const callee = this.parseIdentifier();
@@ -2019,8 +2152,8 @@ export class Parser {
   private outOfBounds(pos: number = this.pos) {
     return pos < 0 || pos >= this.tokens.length;
   }
-  private current() {
-    return this.tokens[this.pos];
+  private updateCurrent() {
+    this.current = this.tokens[this.pos];
   }
   private previous() {
     return this.withinBounds(this.pos - 1)
@@ -2033,15 +2166,22 @@ export class Parser {
       : this.tokens[this.pos + offset];
   }
   private advance() {
-    if (this.withinBounds()) this.pos++;
+    if (this.withinBounds(this.pos+1)) {
+      this.pos++;
+      this.updateCurrent();
+    };
   }
   private backtrack() {
-    if (this.pos > 0) this.pos--;
+    if (this.pos > 0) {
+      this.pos--;
+      this.updateCurrent();
+    };
   }
   private backtrackUntil(type: TokenType) {
     for (let i = this.pos; i > 0; i--) {
       if (this.tokens[i].type === type) {
         this.pos = i;
+        this.updateCurrent();
         return this.tokens[i];
       }
     }
@@ -2050,6 +2190,7 @@ export class Parser {
     for (let i = this.pos; i < this.tokens.length; i++) {
       if (this.tokens[i].type === type) {
         this.pos = i;
+        this.updateCurrent();
         return this.tokens[i];
       }
     }
@@ -2076,7 +2217,7 @@ export class Parser {
     return this.next()?.type === expected;
   }
   private consume(expected: TokenType) {
-    if (this.withinBounds() && this.current().type === expected) {
+    if (this.withinBounds() && this.current.type === expected) {
       this.advance();
       return true;
     } else return false;
@@ -2084,8 +2225,8 @@ export class Parser {
   private consumeValue(expected: TokenType, value: string) {
     if (
       this.withinBounds() &&
-      this.current().type === expected &&
-      this.current().value === value
+      this.current.type === expected &&
+      this.current.value === value
     ) {
       this.advance();
       return true;
@@ -2094,8 +2235,8 @@ export class Parser {
   private isCurrent(expected: TokenType, value: string) {
     return (
       this.withinBounds() &&
-      this.current().type === expected &&
-      this.current().value === value
+      this.current.type === expected &&
+      this.current.value === value
     );
   }
   private expectToken(expected: TokenType) {

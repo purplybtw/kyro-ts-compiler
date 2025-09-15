@@ -1,0 +1,17 @@
+public static class MainClass {
+    private int result = 0;
+    private Parser parser;
+
+    public static void add(a: number, b: number) {
+        return a + b;
+    }
+
+    public static MainClass() {
+        this.result = add(1, 2);
+        print("This is the constructor!" + this.result);
+    }
+
+    public static void method() {
+        print("This is a method!");
+    }
+}

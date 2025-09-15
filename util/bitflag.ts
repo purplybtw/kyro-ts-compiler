@@ -106,6 +106,15 @@ export class BitFlag<T extends string = string> {
     return flags.some(flag => this.has(flag));
   }
 
+  hasAnySet(flags: Set<T>): boolean {
+    for (const flag of this.flags.keys()) {
+      if (flags.has(flag as T) && this.has(flag as T)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   hasAll(...flags: T[]): boolean {
     return flags.every(flag => this.has(flag));
   }

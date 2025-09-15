@@ -47,7 +47,7 @@ async function main() {
   }
 
   const jv = new JavonInstance(
-    renderFileInput("./tests/expression.jv"), 
+    renderFileInput("./tests/class.jv"), 
     "process",
     null, // error/warn handlers not needed -> running in process mode
     jv_arguments

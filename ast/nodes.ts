@@ -724,7 +724,7 @@ export class PropertyDefinition extends ClassMember {
   constructor(
     loc: SourceLocation, 
     public modifiers: Modifiers,
-    public varType: TypeReference | ArrayType, 
+    public varType: TypeReference | ArrayType | InferType, 
     public identifier: Identifier, 
     public initializer?: Node,
   ) {
