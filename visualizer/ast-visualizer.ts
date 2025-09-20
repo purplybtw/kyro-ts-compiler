@@ -1,4 +1,5 @@
 import { Node, Visitor } from "../ast/nodes";
+import { Modifiers } from "../ast/modifiers";
 
 export type VisualizationMode = 'indentation';
 
@@ -724,6 +725,271 @@ export class ASTVisualizer extends Visitor<string> {
 
   visitVoidType(node: any): string {
     return this.renderNodeHeader(node);
+  }
+
+  // Missing class-related nodes
+  visitClassDeclaration(node: any): string {
+    let result = this.renderNodeHeader(node);
+
+    const properties = [
+      { name: 'identifier', value: node.identifier.accept(this) }
+    ];
+
+    if (node.modifiers) {
+      properties.push({ name: 'modifiers', value: this.formatModifiers(node.modifiers) });
+    }
+
+    if (node.extending) {
+      properties.push({ name: 'extends', value: node.extending.accept(this) });
+    }
+
+    if (node.interfaces && node.interfaces.length > 0) {
+      properties.push({ name: 'interfaces', value: '[interfaces]' });
+    }
+
+    if (node.body && node.body.length > 0) {
+      properties.push({ name: 'body', value: '[class members]' });
+    }
+
+    result += '\n';
+    result += this.renderChildren(properties, (prop: any) => {
+      if (prop.name === 'interfaces') {
+        return this.renderChildren(node.interfaces, (iface: any) => iface.accept(this));
+      }
+      if (prop.name === 'body') {
+        return this.renderChildren(node.body, (member: any) => member.accept(this));
+      }
+      return this.renderProperty(prop.name, prop.value);
+    });
+
+    return result;
+  }
+
+  visitMethodDefinition(node: any): string {
+    let result = this.renderNodeHeader(node);
+
+    const properties = [
+      { name: 'identifier', value: node.identifier.accept(this) },
+      { name: 'returnType', value: node.returnType.accept(this) }
+    ];
+
+    if (node.modifiers) {
+      properties.push({ name: 'modifiers', value: this.formatModifiers(node.modifiers) });
+    }
+
+    if (node.generics && node.generics.length > 0) {
+      properties.push({ name: 'generics', value: '[generics]' });
+    }
+
+    if (node.parameters && node.parameters.length > 0) {
+      properties.push({ name: 'parameters', value: '[parameters]' });
+    }
+
+    properties.push({ name: 'body', value: node.body.accept(this) });
+
+    result += '\n';
+    result += this.renderChildren(properties, (prop: any) => {
+      if (prop.name === 'generics') {
+        return this.renderChildren(node.generics, (generic: any) => generic.accept(this));
+      }
+      if (prop.name === 'parameters') {
+        return this.renderChildren(node.parameters, (param: any) => param.accept(this));
+      }
+      return this.renderProperty(prop.name, prop.value);
+    });
+
+    return result;
+  }
+
+  visitPropertyDefinition(node: any): string {
+    let result = this.renderNodeHeader(node);
+
+    const properties = [
+      { name: 'identifier', value: node.identifier.accept(this) },
+      { name: 'type', value: node.varType.accept(this) }
+    ];
+
+    if (node.modifiers) {
+      properties.push({ name: 'modifiers', value: this.formatModifiers(node.modifiers) });
+    }
+
+    if (node.initializer) {
+      properties.push({ name: 'initializer', value: node.initializer.accept(this) });
+    }
+
+    result += '\n';
+    result += this.renderChildren(properties, (prop: any) => 
+      this.renderProperty(prop.name, prop.value)
+    );
+
+    return result;
+  }
+
+  visitConstructor(node: any): string {
+    let result = this.renderNodeHeader(node);
+
+    const properties = [];
+
+    if (node.modifiers) {
+      properties.push({ name: 'modifiers', value: this.formatModifiers(node.modifiers) });
+    }
+
+    if (node.parameters && node.parameters.length > 0) {
+      properties.push({ name: 'parameters', value: '[parameters]' });
+    }
+
+    properties.push({ name: 'body', value: node.body.accept(this) });
+
+    result += '\n';
+    result += this.renderChildren(properties, (prop: any) => {
+      if (prop.name === 'parameters') {
+        return this.renderChildren(node.parameters, (param: any) => param.accept(this));
+      }
+      return this.renderProperty(prop.name, prop.value);
+    });
+
+    return result;
+  }
+
+  visitSuper(node: any): string {
+    return this.renderNodeHeader(node);
+  }
+
+  // Missing expression nodes
+  visitUnionType(node: any): string {
+    let result = this.renderNodeHeader(node);
+
+    const properties = [
+      { name: 'left', value: node.left.accept(this) },
+      { name: 'right', value: node.right.accept(this) }
+    ];
+
+    result += '\n';
+    result += this.renderChildren(properties, (prop: any) => 
+      this.renderProperty(prop.name, prop.value)
+    );
+
+    return result;
+  }
+
+  visitIntersectionType(node: any): string {
+    let result = this.renderNodeHeader(node);
+
+    const properties = [
+      { name: 'left', value: node.left.accept(this) },
+      { name: 'right', value: node.right.accept(this) }
+    ];
+
+    result += '\n';
+    result += this.renderChildren(properties, (prop: any) => 
+      this.renderProperty(prop.name, prop.value)
+    );
+
+    return result;
+  }
+
+  visitMatchExpression(node: any): string {
+    let result = this.renderNodeHeader(node);
+
+    result += '\n';
+    result += this.renderProperty('scrutinee', node.scrutinee.accept(this));
+
+    if (node.arms && node.arms.length > 0) {
+      result += '\n';
+      result += this.renderChildren(node.arms, (arm: any) => arm.accept(this));
+    }
+
+    if (node.defaultArm) {
+      result += '\n';
+      result += this.renderProperty('defaultArm', node.defaultArm.accept(this));
+    }
+
+    return result;
+  }
+
+  visitMatchArm(node: any): string {
+    let result = this.renderNodeHeader(node);
+
+    const properties = [
+      { name: 'pattern', value: node.pattern.accept(this) },
+      { name: 'consequence', value: node.consequence.accept(this) }
+    ];
+
+    result += '\n';
+    result += this.renderChildren(properties, (prop: any) => 
+      this.renderProperty(prop.name, prop.value)
+    );
+
+    return result;
+  }
+
+  visitCheckExpression(node: any): string {
+    let result = this.renderNodeHeader(node);
+
+    result += '\n';
+    result += this.renderProperty('subject', node.subject.accept(this));
+
+    if (node.checks && node.checks.length > 0) {
+      result += '\n';
+      result += this.renderChildren(node.checks, (check: any) => check.accept(this));
+    }
+
+    if (node.any !== undefined) {
+      result += '\n';
+      result += this.renderProperty('any', node.any.toString());
+    }
+
+    return result;
+  }
+
+  visitCheckComparison(node: any): string {
+    let result = this.renderNodeHeader(node);
+
+    const properties = [
+      { name: 'operator', value: node.operator },
+      { name: 'value', value: node.value.accept(this) }
+    ];
+
+    result += '\n';
+    result += this.renderChildren(properties, (prop: any) => 
+      this.renderProperty(prop.name, prop.value)
+    );
+
+    return result;
+  }
+
+  visitRangeExpression(node: any): string {
+    let result = this.renderNodeHeader(node);
+
+    const properties = [
+      { name: 'start', value: node.start.accept(this) },
+      { name: 'end', value: node.end.accept(this) }
+    ];
+
+    result += '\n';
+    result += this.renderChildren(properties, (prop: any) => 
+      this.renderProperty(prop.name, prop.value)
+    );
+
+    return result;
+  }
+
+  // Helper method to format modifiers
+  private formatModifiers(modifiers: number): string {
+    // Handle undefined or zero modifiers
+    if (!modifiers || modifiers === 0) {
+      return '[no modifiers]';
+    }
+    
+    // Create a temporary BitFlag instance to decode the flags
+    const tempModifiers = Modifiers.clone().setValue(modifiers);
+    const activeFlags = tempModifiers.getActiveFlags();
+    
+    if (activeFlags.length === 0) {
+      return '[no modifiers]';
+    }
+    
+    return `[${activeFlags.join(', ')}]`;
   }
 }
 

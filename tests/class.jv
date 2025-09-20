@@ -1,8 +1,14 @@
-public static class MainClass {
+import myDefaultClass from "./test.ky";
+import { myPublicClass } from "./test.ky";
+import myDefaultClass as Default, { myPublicClass as aliasForPublicClass } from "./test.ky";
+import std from "kyro";
+import std as standard from "kyro";
+
+default static class MainClass {
     private int result = 0;
     private Parser parser;
 
-    public static void add(a: number, b: number) {
+    public static add(a: number, b: number): void {
         return a + b;
     }
 
@@ -11,7 +17,7 @@ public static class MainClass {
         print("This is the constructor!" + this.result);
     }
 
-    public static void method() {
+    public static method(): void {
         print("This is a method!");
     }
 }

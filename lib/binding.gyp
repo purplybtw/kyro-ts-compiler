@@ -1,20 +1,10 @@
 {
   "targets": [
     {
-      "target_name": "jv_native",
+      "target_name": "jv_bridge",
       "sources": [ 
-        "native/math.cpp"
+        "bridge/main.cpp"
       ],
-      "include_dirs": [
-        "<!@(node -p \"require('node-addon-api').include\")"
-      ],
-      "defines": [ "NAPI_DISABLE_CPP_EXCEPTIONS" ],
-      "cflags!": [ "-fno-exceptions" ],
-      "cflags_cc!": [ "-fno-exceptions" ]
-    },
-    {
-      "target_name": "jv_internals",
-      "sources": [ "internals/tbd.cpp" ],
       "include_dirs": [
         "<!@(node -p \"require('node-addon-api').include\")"
       ],

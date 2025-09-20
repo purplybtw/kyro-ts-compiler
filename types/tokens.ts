@@ -23,6 +23,14 @@ export enum TokenType {
   ARROW = 'ARROW',
   PLUS = 'PLUS',
   MINUS = 'MINUS',
+  BIT_AND = '&',
+  BIT_OR = '|',
+  BIT_XOR = '^',
+  BIT_NOT = '~',
+  BIT_LSHIFT = '<<',
+  BIT_RSHIFT = '>>',
+  BIT_U_LSHIFT = '<<<', // unsigned left bit shift
+  BIT_U_RSHIFT = '>>>', // unsigned right bit shift
   INCREMENT = 'INCREMENT',
   DECREMENT = 'DECREMENT',
   ASTERISK = 'ASTERISK',

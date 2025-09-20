@@ -1,6 +1,6 @@
 import { BinaryExpression, buildSourceLocation, ExpressionStatement, Node, NumberLiteral } from "./ast/nodes";
-import JavonInstance from "./main/javon";
-import { JV_RunnerArguments } from "./types/javon";
+import KyroInstance from "./main/init";
+import { RunnerArguments } from "./types/kyro";
 import { renderFileInput } from "./util/errors";
 import { requireJvNative } from "./util/native";
 
@@ -42,15 +42,15 @@ export function evaluateExpression(node: Node): number {
 async function main() {  
   const args = process.argv.slice(2);
 
-  const jv_arguments: JV_RunnerArguments = {
+  const ky_arguments: RunnerArguments = {
     builtNative: args[0] as any,
   }
 
-  const jv = new JavonInstance(
+  const jv = new KyroInstance(
     renderFileInput("./tests/class.jv"), 
     "process",
     null, // error/warn handlers not needed -> running in process mode
-    jv_arguments
+    ky_arguments
   );
   
   jv.run();

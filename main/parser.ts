@@ -21,10 +21,10 @@ import { ModifierFlags, ModifierName } from "../ast/modifiers";
 x- Implement missing control flow (for, while, functions)
 x- Implement control flow interaction (break, return, continue, function calling)
 x- Implement array nodes (int[], type[] indentifier = ...)
-4- Implement classes and class-only keywords
-5- Implement property access (class.prop, array.[0])
+x- Implement classes and class-only keywords
+x- Implement property access (class.prop, array.[0])
 6- Array spread operator (...)
-7- Bitwise operations (>>, <<, &, |, ^)
+x- Bitwise operations (>>, <<, &, |, ^)
 */
 
 // Parser Method Return Type
@@ -37,7 +37,7 @@ export class Parser {
   private warn: LocalWarnings;
   private file: FileInput;
   private recursionDepth = 0;
-  private maxRecursionDepth = 1000; // Configurable limit
+  private maxRecursionDepth = 1000;
   private current: Token = this.tokens[0];
 
   constructor(c: MainConfig) {
@@ -95,7 +95,12 @@ export class Parser {
       if (statement instanceof BaseError) {
         hasErrors = true;
         this.synchronize();
-        continue;
+        
+        if(this.withinBounds(this.pos+1)) {
+          continue;
+        } else {
+          break;
+        }
       }
 
       if (statement === null) break;
@@ -120,7 +125,7 @@ export class Parser {
       if (this.previous()?.type === TokenType.SEMICOLON) return;
 
       const current = this.current;
-      if (current?.type === TokenType.KEYWORD) {
+      if (current.type === TokenType.KEYWORD) {
         switch (current.value) {
           case "class":
           case "func":
@@ -133,19 +138,16 @@ export class Parser {
           case "float":
           case "bool":
           case "char":
-          case "void": 
             return;
         }
       }
 
-      // Also synchronize on identifiers that could start new statements
-      if (current?.type === TokenType.IDENTIFIER) {
-        return;
-      }
-
       if (
-        current?.type === TokenType.LBRACE ||
-        current?.type === TokenType.RBRACE
+        current.type === TokenType.IDENTIFIER ||
+        current.type === TokenType.EOF ||
+
+        current.type === TokenType.LBRACE ||
+        current.type === TokenType.RBRACE
       ) {
         return;
       }
@@ -216,10 +218,11 @@ export class Parser {
           if (current.value === ControlFlow.SWITCH) {
             return this.parseSwitchStatement();
           }
+          if (current.value === Structures.THIS) {
+            return this.parsePropertyStatement();
+          }
 
           // Modifiers
-
-          console.log("Parsing modifiers in statement...")
 
           const modifiers = this.parseModifiers(allModifiers);
 
@@ -227,17 +230,13 @@ export class Parser {
 
           const newCurrent = this.current;
 
-          console.log("Checking new current token after modifiers for structures...", newCurrent)
-
           // Structures
 
           if (newCurrent.value === Structures.FUNC) {
-            console.log("its a function!");
             return this.parseFuncDeclaration(modifiers);
           }
 
           if (newCurrent.value === Structures.CLASS) {
-            console.log("its a class!")
             return this.parseClassDeclaration(modifiers);
           }
 
@@ -627,11 +626,11 @@ export class Parser {
 
       const current = this.current;
       if (
-        current?.type === TokenType.ASSIGNMENT ||
-        current?.type === TokenType.PLUS_ASSIGN ||
-        current?.type === TokenType.MINUS_ASSIGN ||
-        current?.type === TokenType.MULTIPLY_ASSIGN ||
-        current?.type === TokenType.DIVIDE_ASSIGN
+        current.type === TokenType.ASSIGNMENT ||
+        current.type === TokenType.PLUS_ASSIGN ||
+        current.type === TokenType.MINUS_ASSIGN ||
+        current.type === TokenType.MULTIPLY_ASSIGN ||
+        current.type === TokenType.DIVIDE_ASSIGN
       ) {
         const assignmentToken = this.current;
         const isCompound = assignmentToken.type !== TokenType.ASSIGNMENT;
@@ -656,8 +655,8 @@ export class Parser {
           right,
         );
       } else if (
-        current?.type === TokenType.INCREMENT ||
-        current?.type === TokenType.DECREMENT
+        current.type === TokenType.INCREMENT ||
+        current.type === TokenType.DECREMENT
       ) {
         this.advance();
         update = new Nodes.UpdateExpression(
@@ -807,7 +806,7 @@ export class Parser {
     // Check for range pattern FIRST (1..5)
     if (
       patternToken?.type === TokenType.NUMBER &&
-      this.next()?.type === TokenType.DOT_DOT &&
+      this.next()?.type  === TokenType.DOT_DOT &&
       this.next(1)?.type === TokenType.NUMBER
     ) {
       return this.parseRangePattern();
@@ -938,16 +937,23 @@ export class Parser {
       const mod = this.current.value.toUpperCase() as ModifierName;
       // to uppercase being used here doesn't matter because KEYWORD 
       // token type only accepts the specific lower case versions of the keywords.
-      console.log('[parser] parseModifiers: current=', this.current);
 
       if (!allowed.has(mod)) break;
 
-      if (
-        (accessModifiers.has(mod as any) && parsed.hasAnySet(accessModifiers)) ||
-        (immutabilityModifiers.has(mod as any) && parsed.hasAnySet(immutabilityModifiers))
-      ) {
+      if (accessModifiers.has(mod as any) && parsed.hasAnySet(accessModifiers)) {
+        const conflictingMod = parsed.getActiveFlags().find(flag => accessModifiers.has(flag as any));
         return this.errors.SyntaxError.throw(
-          `Conflicting modifier '${mod}'`,
+          `Modifier '${mod.toLowerCase()}'${
+            conflictingMod ? " conflicts with '"+conflictingMod.toLowerCase()+"'" : "conflicts with another modifier"}`,
+          this.file,
+          this.getSource(),
+        );
+      }
+      
+      if (immutabilityModifiers.has(mod as any) && parsed.hasAnySet(immutabilityModifiers)) {
+        const conflictingMod = parsed.getActiveFlags().find(flag => immutabilityModifiers.has(flag as any));
+        return this.errors.SyntaxError.throw(
+          `Conflicting modifier '${mod}' with '${conflictingMod}'`,
           this.file,
           this.getSource(),
         );
@@ -957,7 +963,6 @@ export class Parser {
       this.advance();
     }
   
-    console.log('[parser] parseModifiers: done flags=', parsed.getNumberValue(), 'next current=', this.current);
     return parsed;
   }
   
@@ -971,7 +976,6 @@ export class Parser {
 
     if(memberModifiers instanceof BaseError) return memberModifiers;      
     
-    console.log('[parser] parseClassMember: current=', this.current, 'next=', this.next(), 'next2=', this.next(1));
     if (
       this.current.type === TokenType.IDENTIFIER && (
         this.next()?.type === TokenType.LPAREN || this.next()?.type === TokenType.COMPARISON
@@ -1005,14 +1009,12 @@ export class Parser {
 
         if(body instanceof BaseError) return body;
 
-        const __ctor = new Nodes.Constructor(
+        return new Nodes.Constructor(
           this.getSource(),
           memberModifiers.getNumberValue(),
           parameters,
           body
         )
-        console.log('[parser] parseClassMember: parsed Constructor');
-        return __ctor;
       } else {
         if (!this.consume(TokenType.COLON)) {
           return this.errors.SyntaxError.throw(
@@ -1030,7 +1032,7 @@ export class Parser {
 
         if(body instanceof BaseError) return body;
 
-        const __method = new Nodes.MethodDefinition(
+        return new Nodes.MethodDefinition(
           this.getSource(),
           memberModifiers.getNumberValue(),
           identifier,
@@ -1039,12 +1041,11 @@ export class Parser {
           returnType,
           body
         )
-        console.log('[parser] parseClassMember: parsed MethodDefinition');
-        return __method;
       }
     } else if (
       this.current.value === Others.INFER ||
-      Object.values(DataTypes).includes(this.current.value as any)
+      Object.values(DataTypes).includes(this.current.value as any) ||
+      (this.current.type === TokenType.IDENTIFIER && this.next().type === TokenType.IDENTIFIER)
     ) {
       // parse property
   
@@ -1073,15 +1074,13 @@ export class Parser {
         );
       }
 
-      const __prop = new Nodes.PropertyDefinition(
+      return new Nodes.PropertyDefinition(
         this.getSource(memberToken),
         memberModifiers.getNumberValue(),
         varType,
         identifier,
         initializer,
       );
-      console.log('[parser] parseClassMember: parsed PropertyDefinition');
-      return __prop;
     } else {
       return this.errors.SyntaxError.throw(
         "Unexpected token for class member definition",
@@ -1095,7 +1094,7 @@ export class Parser {
     classIdentifier: NodeTypes["Identifier"]
   ): ParseResult<NodeTypes["ClassMember"][]> {
     const members: NodeTypes["ClassMember"][] = [];
-    console.log('[parser] parseClassBody: expect LBRACE current=', this.current);
+
     if (!this.consume(TokenType.LBRACE)) {
       return this.errors.SyntaxError.throw(
         `Expected '{'`,
@@ -1105,7 +1104,6 @@ export class Parser {
     }
     
     while (this.current && this.current.type !== TokenType.RBRACE && this.current.type !== TokenType.EOF) {
-      console.log('[parser] parseClassBody: member loop current=', this.current);
       const member = this.parseClassMember(classIdentifier);
       if (member instanceof BaseError) return member;
       members.push(member);
@@ -1119,7 +1117,6 @@ export class Parser {
       );
     }
   
-    console.log('[parser] parseClassBody: done members=', members.length);
     return members;
   }
 
@@ -1336,14 +1333,6 @@ export class Parser {
     const parameters = this.parseCallParameterList();
     if (parameters instanceof BaseError) return parameters;
 
-    if (!this.consume(TokenType.RPAREN)) {
-      return this.errors.SyntaxError.throw(
-        `Expected ')' after call expression`,
-        this.file,
-        this.getSource(),
-      );
-    }
-
     return new Nodes.CallExpression(
       this.getSource(calleeToken),
       identifier,
@@ -1429,7 +1418,7 @@ export class Parser {
     NodeTypes["TypeReference"] | NodeTypes["ArrayType"] | NodeTypes["VoidType"]
   > {
     const current = this.current;
-    if (current?.type === TokenType.KEYWORD && current.value === Others.VOID) {
+    if (current.type === TokenType.KEYWORD && current.value === Others.VOID) {
       this.advance();
       return new Nodes.VoidType(this.getSource(current));
     }
@@ -1481,7 +1470,7 @@ export class Parser {
     let baseType: NodeTypes["TypeReference"];
 
     if (
-      current?.type === TokenType.KEYWORD &&
+      current.type === TokenType.KEYWORD &&
       Object.values(DataTypes).includes(current.value as any)
     ) {
       if (
@@ -1502,7 +1491,7 @@ export class Parser {
         [],
         kind,
       );
-    } else if (current?.type === TokenType.IDENTIFIER) {
+    } else if (current.type === TokenType.IDENTIFIER) {
       this.advance();
       const generics =
         this.current.type === TokenType.COMPARISON &&
@@ -1550,13 +1539,13 @@ export class Parser {
   private parseIdentifier(): ParseResult<NodeTypes["Identifier"]> {
     const current = this.current;
 
-    if (current?.type === TokenType.IDENTIFIER) {
+    if (current.type === TokenType.IDENTIFIER) {
       this.advance();
       return new Nodes.Identifier(this.getSource(current), current.value);
     }
 
     return this.errors.SyntaxError.throw(
-      `Expected identifier`,
+      `Expected an identifier`,
       this.file,
       this.getSource(current),
     );
@@ -1648,7 +1637,7 @@ export class Parser {
     while (true) {
       const current = this.current;
 
-      if (current?.type === TokenType.DOT) {
+      if (current.type === TokenType.DOT) {
         this.advance();
         const property = this.parseIdentifier();
         if (property instanceof BaseError) return property;
@@ -1659,7 +1648,7 @@ export class Parser {
           property,
           false,
         );
-      } else if (current?.type === TokenType.LBRACKET) {
+      } else if (current.type === TokenType.LBRACKET) {
         this.advance();
         const index = this.parseExpression();
         if (index instanceof BaseError) return index;
@@ -1744,14 +1733,14 @@ export class Parser {
   }
 
   private parseLogicalAndExpression(): ParseResult<Node> {
-    let left = this.parseEqualityExpression();
+    let left = this.parseBitwiseOrExpression();
     if (left instanceof BaseError) return left;
 
     while (this.current.type === TokenType.LOGICAL_AND) {
       const operator = this.current;
       this.advance();
 
-      const right = this.parseEqualityExpression();
+      const right = this.parseBitwiseOrExpression();
       if (right instanceof BaseError) return right;
 
       left = new Nodes.LogicalExpression(
@@ -1791,7 +1780,7 @@ export class Parser {
   }
 
   private parseRelationalExpression(): ParseResult<Node> {
-    let left = this.parseAdditionExpression();
+    let left = this.parseBitwiseShiftExpression();
     if (left instanceof BaseError) return left;
 
     while (
@@ -1801,7 +1790,7 @@ export class Parser {
       const operator = this.current;
       this.advance();
 
-      const right = this.parseAdditionExpression();
+      const right = this.parseBitwiseShiftExpression();
       if (right instanceof BaseError) return right;
 
       left = new Nodes.BinaryExpression(
@@ -1865,12 +1854,103 @@ export class Parser {
     return left;
   }
 
+  private parseBitwiseOrExpression(): ParseResult<Node> {
+    let left = this.parseBitwiseXorExpression();
+    if (left instanceof BaseError) return left;
+
+    while (this.current.type === TokenType.BIT_OR) {
+      const operator = this.current;
+      this.advance();
+
+      const right = this.parseBitwiseXorExpression();
+      if (right instanceof BaseError) return right;
+
+      left = new Nodes.BinaryExpression(
+        this.getSource(operator),
+        left,
+        operator.value,
+        right,
+      );
+    }
+
+    return left;
+  }
+
+  private parseBitwiseXorExpression(): ParseResult<Node> {
+    let left = this.parseBitwiseAndExpression();
+    if (left instanceof BaseError) return left;
+
+    while (this.current.type === TokenType.BIT_XOR) {
+      const operator = this.current;
+      this.advance();
+
+      const right = this.parseBitwiseAndExpression();
+      if (right instanceof BaseError) return right;
+
+      left = new Nodes.BinaryExpression(
+        this.getSource(operator),
+        left,
+        operator.value,
+        right,
+      );
+    }
+
+    return left;
+  }
+
+  private parseBitwiseAndExpression(): ParseResult<Node> {
+    let left = this.parseEqualityExpression();
+    if (left instanceof BaseError) return left;
+
+    while (this.current.type === TokenType.BIT_AND) {
+      const operator = this.current;
+      this.advance();
+
+      const right = this.parseEqualityExpression();
+      if (right instanceof BaseError) return right;
+
+      left = new Nodes.BinaryExpression(
+        this.getSource(operator),
+        left,
+        operator.value,
+        right,
+      );
+    }
+
+    return left;
+  }
+
+  private parseBitwiseShiftExpression(): ParseResult<Node> {
+    let left = this.parseAdditionExpression();
+    if (left instanceof BaseError) return left;
+
+    while (
+      this.current.type === TokenType.BIT_LSHIFT ||
+      this.current.type === TokenType.BIT_RSHIFT
+    ) {
+      const operator = this.current;
+      this.advance();
+
+      const right = this.parseAdditionExpression();
+      if (right instanceof BaseError) return right;
+
+      left = new Nodes.BinaryExpression(
+        this.getSource(operator),
+        left,
+        operator.value,
+        right,
+      );
+    }
+
+    return left;
+  }
+
   private parseUnaryExpression(): ParseResult<Node> {
     const current = this.current;
 
     if (
-      current?.type === TokenType.INCREMENT ||
-      current?.type === TokenType.DECREMENT
+      current.type === TokenType.INCREMENT ||
+      current.type === TokenType.DECREMENT
     ) {
       this.advance();
       const operand = this.parseLeftHandSideExpression();
@@ -1885,8 +1965,9 @@ export class Parser {
     }
 
     if (
-      current?.type === TokenType.LOGICAL_NOT ||
-      current?.type === TokenType.MINUS
+      current.type === TokenType.LOGICAL_NOT ||
+      current.type === TokenType.BIT_NOT ||
+      current.type === TokenType.MINUS
     ) {
       this.advance();
       const operand = this.parseUnaryExpression();
@@ -1926,8 +2007,28 @@ export class Parser {
     return this.current.type === type && this.current.value === value;
   }
 
-  /** Expressions that can be followed by a postfix operator (++, --, ., [], ())
-   */
+  private parsePropertyStatement(): ParseResult<Node> {
+    const left = this.parsePostfixExpression();
+    if (left instanceof BaseError) return left;
+    
+    if (this.current?.type === TokenType.ASSIGNMENT) {
+      const assignmentToken = this.current;
+      const isCompound = assignmentToken.type !== TokenType.ASSIGNMENT;
+      
+      this.advance();
+      const right = this.parseExpression();
+      if (right instanceof BaseError) return right;
+      
+      return new Nodes.Assignment(
+        this.getSource(),
+        left as NodeTypes["Identifier"] | NodeTypes["MemberExpression"] | NodeTypes["ArrayExpression"],
+        right
+      );
+    } else {
+      return new Nodes.ExpressionStatement(this.getSource(), left);
+    }
+  }
+
   private parsePostfixExpression(): ParseResult<Node> {
     let expr = this.parsePrimaryExpression();
     if (expr instanceof BaseError) return expr;
@@ -1935,7 +2036,7 @@ export class Parser {
     while (this.current && this.current.type !== TokenType.EOF) {
       const current = this.current;
 
-      if (current?.type === TokenType.DOT) {
+      if (current.type === TokenType.DOT) {
         this.advance();
         const property = this.parseIdentifier();
         if (property instanceof BaseError) return property;
@@ -1946,7 +2047,7 @@ export class Parser {
           property,
           false,
         );
-      } else if (current?.type === TokenType.LBRACKET) {
+      } else if (current.type === TokenType.LBRACKET) {
         this.advance();
         const index = this.parseExpression();
         if (index instanceof BaseError) return index;
@@ -1989,7 +2090,7 @@ export class Parser {
           parsedGenerics,
           parameters,
         );
-      } else if (current?.type === TokenType.LPAREN) {
+      } else if (current.type === TokenType.LPAREN) {
         const parameters = this.parseCallParameterList();
         if (parameters instanceof BaseError) return parameters;
 
@@ -2003,8 +2104,8 @@ export class Parser {
 
         expr = new Nodes.CallExpression(this.getSource(), expr, [], parameters);
       } else if (
-        current?.type === TokenType.INCREMENT ||
-        current?.type === TokenType.DECREMENT
+        current.type === TokenType.INCREMENT ||
+        current.type === TokenType.DECREMENT
       ) {
         if (
           !(
@@ -2061,11 +2162,11 @@ export class Parser {
   private parsePrimaryExpression(): ParseResult<Node> {
     const current = this.current;
 
-    if (current?.type === TokenType.LBRACKET) {
+    if (current.type === TokenType.LBRACKET) {
       return this.parseArrayExpression();
     }
 
-    if (current?.type === TokenType.BOOLEAN) {
+    if (current.type === TokenType.BOOLEAN) {
       this.advance();
       return new Nodes.BooleanLiteral(
         this.getSource(current),
@@ -2073,7 +2174,7 @@ export class Parser {
       );
     }
 
-    if (current?.type === TokenType.NUMBER) {
+    if (current.type === TokenType.NUMBER) {
       this.advance();
       return new Nodes.NumberLiteral(
         this.getSource(current),
@@ -2081,18 +2182,23 @@ export class Parser {
       );
     }
 
-    if (current?.type === TokenType.STRING) {
+    if (current.type === TokenType.STRING) {
       this.advance();
       return new Nodes.StringLiteral(this.getSource(current), current.value);
     }
 
-    if (this.checkToken(TokenType.KEYWORD, "new", current)) {
-      return this.parseNewExpression();
+    if(current.type === TokenType.KEYWORD) {
+      if(current.value === Structures.NEW) {
+        return this.parseNewExpression();
+      } else if(current.value === Structures.THIS) {
+        this.advance();
+        return new Nodes.ThisReference(this.getSource(current));
+      }
     }
 
-    if (current?.type === TokenType.IDENTIFIER) {
+    if (current.type === TokenType.IDENTIFIER) {
       if (
-        this.next()?.type === TokenType.LPAREN ||
+        this.next().type === TokenType.LPAREN ||
         this.isGenericPattern(this.pos + 1)
       ) {
         return this.parseCallExpression();
@@ -2102,7 +2208,7 @@ export class Parser {
       return new Nodes.Identifier(this.getSource(current), current.value);
     }
 
-    if (current?.type === TokenType.LPAREN) {
+    if (current.type === TokenType.LPAREN) {
       this.advance();
       const expr = this.parseExpression();
       if (expr instanceof BaseError) return expr;
@@ -2217,7 +2323,7 @@ export class Parser {
     return this.next()?.type === expected;
   }
   private consume(expected: TokenType) {
-    if (this.withinBounds() && this.current.type === expected) {
+    if (this.current.type === expected && this.withinBounds()) {
       this.advance();
       return true;
     } else return false;

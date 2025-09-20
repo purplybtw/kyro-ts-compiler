@@ -60,6 +60,7 @@ export abstract class Visitor<T> implements BaseVisitor<T> {
   visitSuper(node: Super): T { return this.default(node); }
   visitInferType(node: InferType): T { return this.default(node); }
   visitVoidType(node: VoidType): T { return this.default(node); }
+  visitThisReference(node: ThisReference): T { return this.default(node); }
 }
 
 export interface BaseVisitor<T> {
@@ -678,6 +679,16 @@ export class VoidType extends Node {
   }
 }
 
+export class ThisReference extends Node {
+  type = "ThisReference" as const
+  constructor(loc: SourceLocation) {
+    super(loc)
+  }
+  accept<T>(visitor: Visitor<T>): T {
+    return visitor.visitThisReference(this)
+  }
+}
+
 export class ClassDeclaration extends Node {
   type = "ClassDeclaration" as const
   constructor(
@@ -819,7 +830,8 @@ export const Nodes = {
   MethodDefinition,
   PropertyDefinition,
   Constructor,
-  Super
+  Super,
+  ThisReference
 }
 
 export type NodeTypes = {

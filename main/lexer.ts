@@ -38,6 +38,9 @@ export class Lexer {
         tokens.push(token);
       }
     }
+
+    tokens.push(new Token(TokenType.EOF, "", this.pos, this.line, this.col));
+
     if(hasErrors) return this.errors.ProgramParsingError.throw(
       "Failed to parse program", this.file, buildSourceLocation(0, 0, 0)
     )
@@ -46,10 +49,6 @@ export class Lexer {
 
   private nextToken(): Token | BaseError | null {
     const char = this.input[this.pos];
-
-    if (this.pos >= this.input.length) {
-      return new Token(TokenType.EOF, "", this.pos, this.line, this.col);
-    }
 
     if (this.isWhitespace(char)) {
       this.advance();
@@ -146,6 +145,26 @@ export class Lexer {
       return new Token(TokenType.DIVIDE_ASSIGN, "/=", this.pos - 2, prevLine, prevCol);
     }
 
+    if (current === ">" && next === ">") {
+      if (this.pos + 2 < this.input.length && this.input[this.pos + 2] === ">") {
+        this.advance(3);
+        return new Token(TokenType.BIT_U_RSHIFT, ">>>", this.pos - 3, prevLine, prevCol);
+      } else {
+        this.advance(2);
+        return new Token(TokenType.BIT_RSHIFT, ">>", this.pos - 2, prevLine, prevCol);
+      }
+    }
+    
+    if (current === "<" && next === "<") {
+      if (this.pos + 2 < this.input.length && this.input[this.pos + 2] === "<") {
+        this.advance(3);
+        return new Token(TokenType.BIT_U_LSHIFT, "<<<", this.pos - 3, prevLine, prevCol);
+      } else {
+        this.advance(2);
+        return new Token(TokenType.BIT_LSHIFT, "<<", this.pos - 2, prevLine, prevCol);
+      }
+    }    
+
     if (current === "." && next === ".") {
       this.advance(2);
       return new Token(TokenType.DOT_DOT, "..", this.pos - 2, prevLine, prevCol);
@@ -232,6 +251,22 @@ export class Lexer {
       case '/': {
         this.advance();
         return new Token(TokenType.SLASH, '/', this.pos - 1, prevLine, prevCol);
+      }
+      case '&': {
+        this.advance();
+        return new Token(TokenType.BIT_AND, '&', this.pos - 1, prevLine, prevCol);
+      }
+      case '|': {
+        this.advance();
+        return new Token(TokenType.BIT_OR, '|', this.pos - 1, prevLine, prevCol);
+      }
+      case '^': {
+        this.advance();
+        return new Token(TokenType.BIT_XOR, '^', this.pos - 1, prevLine, prevCol);
+      }
+      case '~': {
+        this.advance();
+        return new Token(TokenType.BIT_NOT, '~', this.pos - 1, prevLine, prevCol);
       }
       case '.': {
         this.advance();
