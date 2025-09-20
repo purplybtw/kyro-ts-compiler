@@ -245,6 +245,14 @@ export class Parser {
             return this.parseTypeDeclaration();
           }*/
 
+          if(current.value === Structures.MATCH) {
+            return this.errors.SyntaxError.throw(
+              "Match expressions cannot be statements",
+              this.file,
+              this.getSource()
+            )
+          }
+
           return this.errors.UnexpectedTokenError.throw(
             `Unexpected keyword '${current.value}'`,
             this.file,
@@ -1562,7 +1570,7 @@ export class Parser {
       | NodeTypes["ArrayType"]
       | null = null;
 
-    if (this.isCurrent(TokenType.KEYWORD, Others.INFER)) {
+    if (this.checkToken(TokenType.KEYWORD, Others.INFER)) {
       type = new Nodes.InferType(this.getSource());
       this.advance();
     } else {
@@ -1624,10 +1632,191 @@ export class Parser {
     );
   }
 
-  private parseLeftHandSideExpression(): ParseResult<
+  private parseMatchPattern(): ParseResult<NodeTypes["Pattern"]> {
+    const patternToken = this.current;
+
+    /*
+    match x {
+      0 => "zero";                       // LiteralPattern
+      ERROR => "error";                  // IdentifierPattern
+      std.MAX_INT => "max";              // MemberPattern
+      1..5 => "small";                   // RangePattern
+      as y : y > 10 => "big";            // BindingPattern + GuardedPattern
+      default => "other";                      // WildcardPattern
+    }
+    */
+
+    let pattern: ParseResult<NodeTypes["Pattern"]> | undefined = undefined;
+    const next = this.next();
+
+    if(this.current.type === TokenType.IDENTIFIER) {
+      let expr = this.parseLeftHandSideExpression(false); // dont allow computed
+
+      if(expr instanceof BaseError) return expr;
+
+      if(expr instanceof Nodes.Identifier) {
+        pattern = new Nodes.IdentifierPattern(
+          this.getSource(),
+          expr
+        )
+      } else {
+        pattern = new Nodes.MemberPattern(
+          this.getSource(),
+          expr.object,
+          expr.property
+        )
+      }
+    } else if (this.current.type === TokenType.KEYWORD) {
+      if (this.current.value === Others.AS) {
+        if (next.type === TokenType.IDENTIFIER) {
+          pattern = new Nodes.BindingPattern(
+            this.getSource(),
+            new Nodes.Identifier(
+              this.getSource(next),
+              next.value
+            )
+          )
+          this.advance();
+          this.advance();
+        } else {
+          return this.errors.SyntaxError.throw(
+            "Expected identifier",
+            this.file,
+            this.getSource()
+          );
+        }
+      } else if (this.current.value === ControlFlow.DEFAULT) {
+        this.advance();
+        return new Nodes.WildcardPattern(this.getSource(this.previous()));
+      } else {
+        return this.errors.SyntaxError.throw(
+          "Expected a pattern keyword",
+          this.file,
+          this.getSource()
+        );
+      }
+    } else if (
+      patternToken.type === TokenType.NUMBER &&
+      next.type  === TokenType.DOT_DOT &&
+      this.next(1)?.type === TokenType.NUMBER
+    ) {
+      pattern = this.parseRangePattern();
+    } else if (
+      patternToken.type === TokenType.STRING ||
+      patternToken.type === TokenType.NUMBER ||
+      patternToken.type === TokenType.BOOLEAN
+    ) {
+      pattern = this.parseLiteralPattern();
+    } else {
+      return this.errors.SyntaxError.throw(
+        "Expected a pattern",
+        this.file,
+        this.getSource(patternToken)
+      )
+    }
+
+    if(pattern instanceof BaseError) return pattern;
+
+    if(this.consume(TokenType.COLON)) {
+      // parse guard for pattern and guard it
+
+      const expr = this.parseExpression();
+
+      if(expr instanceof BaseError) return expr;
+
+      pattern = new Nodes.GuardedPattern(
+        this.getSource(),
+        pattern as NodeTypes["Pattern"],
+        expr
+      );
+    }
+
+    return pattern as NodeTypes["Pattern"];
+  }
+
+  private parseMatchArm(): ParseResult<NodeTypes["MatchArm"]> {
+    let pattern = this.parseMatchPattern();
+
+    if(pattern instanceof BaseError) return pattern;
+
+    if(!this.consume(TokenType.ARROW)) {
+      return this.errors.SyntaxError.throw(
+        "Expected '=>' after pattern",
+        this.file,
+        this.getSource()
+      )
+    }
+
+    let consequence = this.parseExpression();
+
+    if(consequence instanceof BaseError) return consequence;
+
+    if(!this.consume(TokenType.SEMICOLON)) {
+      return this.errors.SyntaxError.throw(
+        "Expected ';'",
+        this.file,
+        this.getSource()
+      )
+    }
+
+    return new Nodes.MatchArm(
+      pattern.loc,
+      pattern,
+      consequence
+    )
+  }
+
+  private parseMatchExpression(): ParseResult<NodeTypes["MatchExpression"]> {
+    const matchToken = this.current;
+    this.advance();
+
+    const expr = this.parseExpression();
+    if(expr instanceof BaseError) return expr;
+
+    if(!this.consume(TokenType.LBRACE)) {
+      return this.errors.SyntaxError.throw(
+        "Expected '{'",
+        this.file,
+        this.getSource()
+      )
+    }
+
+    const arms: NodeTypes["MatchArm"][] = [];
+    let hasDefaultArm = false;
+
+    while(this.current.type != TokenType.RBRACE && this.current.type != TokenType.EOF) {
+      const arm = this.parseMatchArm();
+      if(arm instanceof BaseError) return arm;
+      if(arm.pattern instanceof Nodes.WildcardPattern) {
+        if(hasDefaultArm) {
+          return this.errors.SyntaxError.throw(
+            "Default arm for match expected",
+            this.file,
+            arm.pattern.loc
+          )
+        } else hasDefaultArm = true;
+      }
+      arms.push(arm);
+    }
+
+    if(!this.consume(TokenType.RBRACE)) {
+      return this.errors.SyntaxError.throw(
+        "Expected '}'",
+        this.file,
+        this.getSource()
+      )
+    }
+
+    return new Nodes.MatchExpression(
+      this.getSource(matchToken),
+      expr,
+      arms,
+    )
+  }
+
+  private parseLeftHandSideExpression(allowComputed: boolean = true): ParseResult<
     | NodeTypes["Identifier"]
     | NodeTypes["MemberExpression"]
-    | NodeTypes["ArrayExpression"]
   > {
     let expr = this.parseIdentifier() as ParseResult<
       NodeTypes["Identifier"] | NodeTypes["MemberExpression"]
@@ -1659,6 +1848,14 @@ export class Parser {
             this.file,
             this.getSource(),
           );
+        }
+
+        if(!allowComputed) {
+          return this.errors.SyntaxError.throw(
+            "Computed member access is not allowed in this context.",
+            this.file,
+            this.getSource(current)
+          )
         }
 
         expr = new Nodes.MemberExpression(this.getSource(), expr, index, true);
@@ -1835,7 +2032,8 @@ export class Parser {
 
     while (
       this.current.type === TokenType.ASTERISK ||
-      this.current.type === TokenType.SLASH
+      this.current.type === TokenType.SLASH ||
+      this.current.type === TokenType.MOD
     ) {
       const operator = this.current;
       this.advance();
@@ -2193,6 +2391,8 @@ export class Parser {
       } else if(current.value === Structures.THIS) {
         this.advance();
         return new Nodes.ThisReference(this.getSource(current));
+      } else if(current.value === Structures.MATCH) {
+        return this.parseMatchExpression();
       }
     }
 
@@ -2337,13 +2537,6 @@ export class Parser {
       this.advance();
       return true;
     } else return false;
-  }
-  private isCurrent(expected: TokenType, value: string) {
-    return (
-      this.withinBounds() &&
-      this.current.type === expected &&
-      this.current.value === value
-    );
   }
   private expectToken(expected: TokenType) {
     let next = this.next();

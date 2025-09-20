@@ -240,6 +240,10 @@ export class Lexer {
         this.advance();
         return new Token(TokenType.PLUS, '+', this.pos - 1, prevLine, prevCol);
       }
+      case '%': {
+        this.advance();
+        return new Token(TokenType.MOD, '%', this.pos - 1, prevLine, prevCol);
+      }
       case '-': {
         this.advance();
         return new Token(TokenType.MINUS, '-', this.pos - 1, prevLine, prevCol);

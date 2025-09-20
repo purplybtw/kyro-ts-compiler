@@ -142,7 +142,7 @@ class Animal {
   string name;
   int age;
   
-  void speak(): void {
+  speak(): void {
     print(name + " makes a sound");
   }
 }
@@ -150,11 +150,11 @@ class Animal {
 class Dog extends Animal {
   string breed;
   
-  void bark(): void {
+  bark(): void {
     print(name + " barks!");
   }
   
-  override void speak(): void {
+  override speak(): void {
     bark();
   }
 }
@@ -170,17 +170,17 @@ class Circle implements Drawable {
   float radius;
   Point center;
   
-  void draw(): void {
+  draw(): void {
     print("Drawing circle at (" + center.x + ", " + center.y + ")");
   }
   
-  float getArea(): float {
+  getArea(): float {
     return 3.14159 * radius * radius;
   }
 }
 
 // 14. Error handling constructs
-void testErrorHandling(): void {
+func testErrorHandling(): void {
   try {
     int result = 10 / 0;
     print("Result: " + result);
@@ -194,7 +194,7 @@ void testErrorHandling(): void {
 }
 
 // 15. Switch statement
-void testSwitch(day: int): void {
+func testSwitch(day: int): void {
   switch day {
     case 1:
     case 2:
@@ -214,7 +214,7 @@ void testSwitch(day: int): void {
 }
 
 // 16. Main function
-void main(): void {
+func main(): void {
   print("Starting Javon language tests...");
   
   // Test basic operations

@@ -50,7 +50,8 @@ export enum Others {
   NULL = "null",
   AS = "as",
   INFER = "infer",
-  UNDEFINED = "undefined"
+  UNDEFINED = "undefined",
+  OPERATOR = "operator"
 }
 
 export const KEYWORDS = [

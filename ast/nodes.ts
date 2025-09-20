@@ -45,6 +45,8 @@ export abstract class Visitor<T> implements BaseVisitor<T> {
   visitRangePattern(node: RangePattern): T { return this.default(node); }
   visitIdentifierPattern(node: IdentifierPattern): T { return this.default(node); }
   visitBindingPattern(node: BindingPattern): T { return this.default(node); }
+  visitMemberPattern(node: MemberPattern): T { return this.default(node); }
+  visitWildcardPattern(node: WildcardPattern): T { return this.default(node); }
   visitGuardedPattern(node: GuardedPattern): T { return this.default(node); }
   visitCheckExpression(node: CheckExpression): T { return this.default(node); }
   visitCheckComparison(node: CheckComparison): T { return this.default(node); }
@@ -62,7 +64,6 @@ export abstract class Visitor<T> implements BaseVisitor<T> {
   visitVoidType(node: VoidType): T { return this.default(node); }
   visitThisReference(node: ThisReference): T { return this.default(node); }
 }
-
 export interface BaseVisitor<T> {
   visitNumberLiteral(node: NumberLiteral): T
   visitStringLiteral(node: StringLiteral): T
@@ -574,25 +575,45 @@ export class SwitchCase extends Node {
 }
 
 export abstract class Pattern extends Node {
-  constructor(loc: SourceLocation, public guard?: Expression) {
+  constructor(loc: SourceLocation) {
     super(loc)
   }
 }
 
 export class LiteralPattern extends Pattern {
   type = "LiteralPattern" as const
-  constructor(loc: SourceLocation, public value: NumberLiteral | StringLiteral | BooleanLiteral, guard?: Expression) {
-    super(loc, guard)
+  constructor(loc: SourceLocation, public value: NumberLiteral | StringLiteral | BooleanLiteral) {
+    super(loc)
   }
   accept<T>(visitor: Visitor<T>): T {
     return visitor.visitLiteralPattern(this)
   }
 }
 
+export class MemberPattern extends Pattern {
+  type = "MemberPattern" as const
+  constructor(loc: SourceLocation, public object: Node, public property: Node) {
+    super(loc)
+  }
+  accept<T>(visitor: Visitor<T>): T {
+    return visitor.visitMemberPattern(this)
+  }
+}
+
+export class WildcardPattern extends Pattern {
+  type = "WildcardPattern" as const;
+  constructor(loc: SourceLocation) {
+    super(loc);
+  }
+  accept<T>(visitor: Visitor<T>): T {
+    return visitor.visitWildcardPattern(this);
+  }
+}
+
 export class RangePattern extends Pattern {
   type = "RangePattern" as const
-  constructor(loc: SourceLocation, public start: NumberLiteral, public end: NumberLiteral, guard?: Expression) {
-    super(loc, guard)
+  constructor(loc: SourceLocation, public start: NumberLiteral, public end: NumberLiteral) {
+    super(loc)
   }
   accept<T>(visitor: Visitor<T>): T {
     return visitor.visitRangePattern(this)
@@ -601,8 +622,8 @@ export class RangePattern extends Pattern {
 
 export class IdentifierPattern extends Pattern {
   type = "IdentifierPattern" as const
-  constructor(loc: SourceLocation, public identifier: Identifier, public isLet: boolean, guard?: Expression) {
-    super(loc, guard)
+  constructor(loc: SourceLocation, public identifier: Identifier) {
+    super(loc)
   }
   accept<T>(visitor: Visitor<T>): T {
     return visitor.visitIdentifierPattern(this)
@@ -611,8 +632,8 @@ export class IdentifierPattern extends Pattern {
 
 export class BindingPattern extends Pattern {
   type = "BindingPattern" as const
-  constructor(loc: SourceLocation, public identifier: Identifier, guard?: Expression) {
-    super(loc, guard)
+  constructor(loc: SourceLocation, public identifier: Identifier) {
+    super(loc)
   }
   accept<T>(visitor: Visitor<T>): T {
     return visitor.visitBindingPattern(this)
@@ -831,7 +852,9 @@ export const Nodes = {
   PropertyDefinition,
   Constructor,
   Super,
-  ThisReference
+  ThisReference,
+  WildcardPattern,
+  MemberPattern
 }
 
 export type NodeTypes = {

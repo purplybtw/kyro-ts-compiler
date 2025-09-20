@@ -22,6 +22,7 @@ export enum TokenType {
   COMPARISON = 'COMPARISON',
   ARROW = 'ARROW',
   PLUS = 'PLUS',
+  MOD = 'MOD',
   MINUS = 'MINUS',
   BIT_AND = '&',
   BIT_OR = '|',

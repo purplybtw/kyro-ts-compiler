@@ -35,7 +35,7 @@
 
 ## Function and Operator Overloading
 
-### 4. Function Overloading Support
+### 4. Function Overloading Support - !!!! SCRAPPED !!!! 
 - [ ] Modify `FunctionDeclaration` to track signature information
 - [ ] Add `signature` getter method to generate unique signatures
 - [ ] Add `OverloadGroup` AST node to manage multiple function overloads
@@ -43,7 +43,7 @@
 - [ ] Add overload conflict detection
 - [ ] Update visitor interface for `OverloadGroup`
 
-### 5. Operator Overloading Support
+### 5. Class Operator Overloading Support
 - [ ] Add `isOperatorOverload` flag to `FunctionDeclaration`
 - [ ] Add `operatorSymbol` property to track which operator is overloaded
 - [ ] Add parsing for operator overload syntax (`func operator+(a: int, b: int): int`)

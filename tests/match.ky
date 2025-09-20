@@ -1,0 +1,30 @@
+int value = 7;
+
+String result = match value {
+    // Literal patterns
+    0 => "zero";
+    1 => "one";
+    
+    // Literal patterns with guards
+    2: value % 2 == 0 => "two and even";
+    3: value % 2 != 0 => "three and odd";
+    
+    // Identifier patterns
+    ERROR => "error";
+    SUCCESS: value > 100 => "success large";
+    
+    // Member patterns
+    std.MAX_INT => "max";
+    std.MIN_INT: value < 0 => "min negative";
+    
+    // Range patterns
+    4..6 => "small range";
+    7..10: value % 2 == 1 => "odd in range";
+    
+    // Binding patterns
+    as x: x > 10 => "bound big";
+    as y: y < 0 => "bound negative";
+    
+    // Wildcard patterns
+    default => "other";
+};

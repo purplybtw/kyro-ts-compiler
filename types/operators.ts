@@ -3,7 +3,8 @@ export enum ArithmeticOperators {
   PLUS = "+",
   MINUS = "-",
   MULTIPLY = "*",
-  DIVIDE = "/"
+  DIVIDE = "/",
+  MOD = "%"
 }
 
 export enum ComparisonOperators {
