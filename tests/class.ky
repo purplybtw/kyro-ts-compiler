@@ -3,7 +3,7 @@ import { myPublicClass } from "./test.ky";
 import myDefaultClass, { myPublicClass as aliasForPublicClass } from "./test.ky";
 import std from "kyro";
 import std from "kyro";*/
-
+/*
 default static class MainClass {
     private int result = 0 + null;
     private Parser parser;
@@ -20,4 +20,14 @@ default static class MainClass {
     public static method(): void {
         print("This is a method!");
     }
+}*/
+
+if(x is any of [2, 5, 3, 7]) {
+    print(x+"is in array");
+}
+
+const int[] array = [];
+
+if(x is none of array) {
+    print(x+"isn't in array");
 }

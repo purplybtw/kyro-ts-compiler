@@ -1,6 +1,6 @@
 import { Token, TokenType } from "../types/tokens";
 import { OperatorType, isOperator, ArithmeticOperators, ComparisonOperators, BitwiseOperators, LogicalOperators, OtherOperators } from "../types/operators";
-import { DataTypes, ControlFlow, Structures, Others, Execution } from "../types/keywords";
+import { DataTypes, ControlFlow, Structures, Others, Execution, ComparisonKeywords } from "../types/keywords";
 import {
   Nodes,
   Program,
@@ -409,24 +409,6 @@ export class Parser {
         case TokenType.IDENTIFIER: {
           let nextType = this.next()?.type;
 
-          if (nextType === TokenType.LPAREN) {
-            const callExpr = this.parseCallExpression();
-            if (callExpr instanceof BaseError) return callExpr;
-
-            if (!this.consume(TokenType.SEMICOLON)) {
-              return this.errors.SyntaxError.throw(
-                `Expected ';' after call expression`,
-                this.file,
-                this.getSource(),
-              );
-            }
-
-            return new Nodes.ExpressionStatement(
-              this.getSource(current),
-              callExpr,
-            );
-          }
-
           if (
             nextType === TokenType.IDENTIFIER ||
             (nextType === TokenType.LBRACKET &&
@@ -463,6 +445,8 @@ export class Parser {
           }
 
           this.pos = startPos;
+          this.current = this.tokens[this.pos];
+
           const parsed = this.parseExpression();
           if (parsed instanceof BaseError) return parsed;
 
@@ -710,8 +694,22 @@ export class Parser {
     const tryBlock = this.parseBlock();
     if (tryBlock instanceof BaseError) return tryBlock;
 
-    const catchClause = this.parseCatchClause();
-    if (catchClause instanceof BaseError) return catchClause;
+    const clauses: NodeTypes["CatchClause"][] = [];
+
+    while(this.consumeValue(TokenType.KEYWORD, ControlFlow.CATCH)) {
+      const catchClause = this.parseCatchClause();
+      if (catchClause instanceof BaseError) return catchClause;
+
+      clauses.push(catchClause);
+    }
+
+    if(clauses.length === 0) {
+      return this.errors.SyntaxError.throw(
+        "Expected a catch clause",
+        this.file,
+        this.getSource()
+      )
+    }
 
     const finallyClause = this.parseFinallyClause();
     if (finallyClause instanceof BaseError) return finallyClause;
@@ -719,7 +717,7 @@ export class Parser {
     return new Nodes.TryStatement(
       this.getSource(tryToken),
       tryBlock,
-      catchClause,
+      clauses,
       finallyClause,
     );
   }
@@ -1005,6 +1003,36 @@ export class Parser {
     return patterns;
   }
 
+  private parseCaseBlock(): ParseResult<NodeTypes["Block"]> {
+    const recursionError = this.enterRecursion();
+    if (recursionError) return recursionError;
+    
+    const first = this.current;
+
+    const startedWithBrace = this.consume(TokenType.LBRACE);
+
+    let statements: Node[] = [];
+
+    while (
+      this.current &&
+      this.current.type !== TokenType.EOF &&
+      (
+        (startedWithBrace && this.current.type !== TokenType.RBRACE) ||
+        (!startedWithBrace && !this.checkToken(TokenType.KEYWORD, ControlFlow.CASE))
+      )
+    ) {    
+      const statement = this.parseStatement();
+      if (statement instanceof BaseError) return statement;
+      if (statement === null) break;
+      statements.push(statement);
+    }
+
+    this.consume(TokenType.RBRACE)
+
+    this.exitRecursion();
+    return new Nodes.Block(this.getSource(first), statements);
+  }
+
   private parseSwitchStatement(): ParseResult<NodeTypes["SwitchStatement"]> {
     const switchToken = this.current;
     this.advance();
@@ -1044,7 +1072,7 @@ export class Parser {
           );
         }
 
-        const caseBlock = this.parseBlock();
+        const caseBlock = this.parseCaseBlock();
         if (caseBlock instanceof BaseError) return caseBlock;
 
         cases.push(
@@ -2197,6 +2225,8 @@ export class Parser {
   private parseExpression(): ParseResult<Expression> {
     const recursionError = this.enterRecursion();
     if (recursionError) return recursionError;
+
+    console.log("Parsing expression ", this.current)
     
     const result = this.parseConditionalExpression() as Expression;
     this.exitRecursion();
@@ -2279,7 +2309,7 @@ export class Parser {
   }
 
   private parseEqualityExpression(): ParseResult<Node> {
-    let left = this.parseRelationalExpression();
+    let left = this.parseIsExpression();
     if (left instanceof BaseError) return left;
 
     while (
@@ -2289,7 +2319,7 @@ export class Parser {
       const operator = this.current;
       this.advance();
 
-      const right = this.parseRelationalExpression();
+      const right = this.parseIsExpression();
       if (right instanceof BaseError) return right;
 
       left = new Nodes.BinaryExpression(
@@ -2302,6 +2332,58 @@ export class Parser {
 
     return left;
   }
+
+  private parseIsExpression(): ParseResult<Node> {
+    let left = this.parseRelationalExpression();
+    if (left instanceof BaseError) return left;
+  
+    while (this.consumeValue(TokenType.KEYWORD, ComparisonKeywords.IS)) {  
+      if (
+        this.current.type != TokenType.KEYWORD || (
+          this.current.value != ComparisonKeywords.ANY &&
+          this.current.value != ComparisonKeywords.ALL &&
+          this.current.value != ComparisonKeywords.NONE
+        )
+      ) {
+        return this.errors.SyntaxError.throw(
+          "Expected 'any', 'all', or 'none'",
+          this.file,
+          this.getSource()
+        );
+      }
+      const mode = this.current.value;
+      this.advance();
+  
+      // Expect "of"
+      if (!this.consumeValue(TokenType.KEYWORD, ComparisonKeywords.OF)) {
+        return this.errors.SyntaxError.throw(
+          'Expected "of" after mode in "is" expression',
+          this.file,
+          this.getSource()
+        );
+      }
+
+      let values: NodeTypes["Identifier"] | NodeTypes["ArrayExpression"];
+  
+      if(this.current.type as TokenType === TokenType.IDENTIFIER) {
+        let id = this.parseIdentifier();
+
+        if(id instanceof BaseError) return id;
+
+        values = id;
+      } else {
+        let arr = this.parseArrayExpression();
+
+        if(arr instanceof BaseError) return arr;
+
+        values = arr;
+      }
+  
+      left = new Nodes.IsExpression(left, mode, values);
+    }
+  
+    return left;
+  }  
 
   private parseRelationalExpression(): ParseResult<Node> {
     let left = this.parseBitwiseShiftExpression();
@@ -2473,7 +2555,6 @@ export class Parser {
 
   private parseUnaryExpression(): ParseResult<Node> {
     const current = this.current;
-
     if (
       current.type === TokenType.INCREMENT ||
       current.type === TokenType.DECREMENT
@@ -2573,6 +2654,8 @@ export class Parser {
     let expr = this.parsePrimaryExpression();
     if (expr instanceof BaseError) return expr;
 
+    console.log("Checking postfix exp")
+
     while (this.current && this.current.type !== TokenType.EOF) {
       const current = this.current;
 
@@ -2623,6 +2706,7 @@ export class Parser {
         current.type === TokenType.INCREMENT ||
         current.type === TokenType.DECREMENT
       ) {
+        console.log("detected postfix op")
         if (
           !(
             expr instanceof Nodes.Identifier ||
@@ -2775,14 +2859,6 @@ export class Parser {
 
     const args = this.parseCallParameterList();
     if (args instanceof BaseError) return args;
-
-    if (!this.consume(TokenType.RPAREN)) {
-      return this.errors.SyntaxError.throw(
-        `Expected ')' after new expression arguments`,
-        this.file,
-        this.getSource(),
-      );
-    }
 
     return new Nodes.NewExpression(this.getSource(newToken), callee, args);
   }

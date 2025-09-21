@@ -70,6 +70,7 @@ export abstract class Visitor<T> implements BaseVisitor<T> {
   visitNaNLiteral(node: NaNLiteral): T { return this.default(node); }
   visitAwaitExpression(node: AwaitExpression): T { return this.default(node); }
   visitImportDeclaration(node: ImportDeclaration): T { return this.default(node); }
+  visitIsExpression(node: IsExpression): T { return this.default(node); }
 }
 export interface BaseVisitor<T> {
   visitNumberLiteral(node: NumberLiteral): T
@@ -77,6 +78,7 @@ export interface BaseVisitor<T> {
   visitBooleanLiteral(node: BooleanLiteral): T
   visitIdentifier(node: Identifier): T
   visitBinaryExpression(node: BinaryExpression): T
+  visitIsExpression(node: IsExpression): T
   visitLogicalExpression(node: LogicalExpression): T
   visitConditionalExpression(node: ConditionalExpression): T
   visitUnaryExpression(node: UnaryExpression): T
@@ -327,7 +329,7 @@ export class ThrowStatement extends Node {
 
 export class TryStatement extends Node {
   type = "TryStatement" as const
-  constructor(loc: SourceLocation, public body: Block, public catchClause: CatchClause, public finallyClause: FinallyClause) {
+  constructor(loc: SourceLocation, public body: Block, public catchClauses: CatchClause[], public finallyClause: FinallyClause) {
     super(loc)
   }
   accept<T>(visitor: BaseVisitor<T>): T {
@@ -890,6 +892,19 @@ export class Super extends Node {
   }
 }
 
+class IsExpression extends Node {
+  type = "IsExpression" as const;
+  constructor(
+    public expression: Node,
+    public mode: "any" | "all" | "none",
+    public values: Identifier | ArrayExpression
+  ) { super(expression.loc); }
+
+  accept<T>(visitor: Visitor<T>): T {
+    return visitor.visitIsExpression(this);
+  }
+}
+
 export const Nodes = {
   NumberLiteral,
   StringLiteral,
@@ -958,7 +973,8 @@ export const Nodes = {
   ImportDeclaration,
   UndefinedLiteral,
   NaNLiteral,
-  NullLiteral
+  NullLiteral,
+  IsExpression
 }
 
 export type NodeTypes = {

@@ -62,13 +62,21 @@
 - [ ] Handle `default` case in match
 - [ ] Add exhaustiveness checking (basic)
 
-### 7. Check Expressions (comp expressions)
-- [ ] Add `CheckExpression` AST node
-- [ ] Add `CheckClause` AST node for individual checks
-- [ ] Implement `parseCheckExpression()` method
-- [ ] Parse `check x (<5; >3; ==4)` syntax
-- [ ] Support `check any` for OR logic
-- [ ] Add proper parentheses and semicolon handling
+### 7. Is Expressions (comp expressions)
+class IsExpression extends Node {
+  type = "IsExpression" as const;
+  constructor(
+    public expression: Node,
+    public mode: "any" | "all" | "none",
+    public values: Node[] // constants or expressions
+  ) { super(expression.loc); }
+
+  accept<T>(visitor: Visitor<T>): T {
+    return visitor.visitIsExpression(this);
+  }
+}
+
+x is any/all/none of [...]
 
 ### 8. Range Expressions
 - [ ] Add `RangeExpression` AST node

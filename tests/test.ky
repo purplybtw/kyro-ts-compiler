@@ -19,23 +19,23 @@ infer autoValue = 100;
 infer autoText = "inferred string";
 
 // 4. Function definitions
-int fibonacci(n: int): int {
+func fibonacci(n: int): int {
   if n <= 1 {
     return n;
   }
   return fibonacci(n - 1) + fibonacci(n - 2);
 }
 
-void printMessage(msg: string): void {
+func printMessage(msg: string): void {
   print("Message: " + msg);
 }
 
-float calculateArea(width: float, height: float): float {
+func calculateArea(width: float, height: float): float {
   return width * height;
 }
 
 // 5. Complex control flow
-void testControlFlow(): void {
+func testControlFlow(): void {
   int x = 10;
   
   // If-elif-else
@@ -67,7 +67,7 @@ void testControlFlow(): void {
 }
 
 // 6. Complex expressions
-void testExpressions(): void {
+func testExpressions(): void {
   int a = 5;
   int b = 10;
   int c = 15;
@@ -94,10 +94,10 @@ void testExpressions(): void {
 }
 
 // 7. Nested functions and scope
-void outerFunction(): void {
+func outerFunction(): void {
   int outerVar = 100;
   
-  void innerFunction(): void {
+  func innerFunction(): void {
     int innerVar = 50;
     print("Inner: " + innerVar);
     print("Outer: " + outerVar);
@@ -112,7 +112,7 @@ func identity<T>(value: T): T {
 }
 
 // 9. Complex data structures
-type Point {
+/*type Point {
   float x;
   float y;
 }
@@ -121,10 +121,10 @@ type Rectangle {
   Point topLeft;
   Point bottomRight;
   string color;
-}
+}*/
 
 // 10. Object creation and usage
-void testObjects(): void {
+func testObjects(): void {
   Point p1 = new Point(1.0, 2.0);
   Point p2 = new Point(3.0, 4.0);
   
@@ -160,10 +160,11 @@ class Dog extends Animal {
 }
 
 // 12. Interface definition
+/*
 interface Drawable {
   void draw(): void;
   float getArea(): float;
-}
+}*/
 
 // 13. Class implementing interface
 class Circle implements Drawable {
@@ -242,4 +243,8 @@ func main(): void {
   testSwitch(3);
   
   print("All tests completed!");
+}
+
+while counter < 3 {
+  counter++;
 }

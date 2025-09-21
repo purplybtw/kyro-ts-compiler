@@ -36,6 +36,7 @@ export enum Structures {
   EXTENDS = "extends",
   PRIVATE = "private",
   PUBLIC = "public",
+  OVERRIDE = "override",
   STATIC = "static",
   OPERATOR = "operator",
   PROTECTED = "protected",
@@ -52,6 +53,14 @@ export enum Others {
   FROM = "from"
 }
 
+export enum ComparisonKeywords {
+  IS = "is",
+  ANY = "any",
+  ALL = "all",
+  NONE = "none",
+  OF = "of"
+}
+
 export enum Execution {
   ASYNC = "async",
   AWAIT = "await"
@@ -62,7 +71,8 @@ export const KEYWORDS = [
   ...Object.values(ControlFlow),
   ...Object.values(Structures),
   ...Object.values(Others),
-  ...Object.values(Execution)
+  ...Object.values(Execution),
+  ...Object.values(ComparisonKeywords)
 ] as const;
 
 export type Keyword = typeof KEYWORDS[number];
