@@ -1,5 +1,8 @@
 int value = 7;
 
+func x(a: string, ...b: string[]): void {};
+func y(a: string, ...b: string[]): void {};
+
 String result = match value {
     // Literal patterns
     0 => "zero";

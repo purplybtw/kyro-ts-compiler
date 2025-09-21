@@ -8,8 +8,9 @@ export const ModifierFlags = {
     DEFAULT: 1 << 3,
     STATIC: 1 << 4,
     ASYNC: 1 << 5,
-    FINAL: 1 << 6,
-    READONLY: 1 << 7,
+    OPERATOR: 1 << 6,
+    FINAL: 1 << 7,
+    READONLY: 1 << 8,
 };
 
 export type ModifierName = keyof typeof ModifierFlags;
@@ -21,7 +22,7 @@ export const accessModifiers = ModifierSetSubset([
 ]);
 
 export const behaviorModifiers = ModifierSetSubset([
-    "STATIC", "ASYNC"
+    "STATIC", "ASYNC", "OPERATOR"
 ])
 
 export const immutabilityModifiers = ModifierSetSubset([

@@ -30,7 +30,6 @@ export enum TokenType {
   BIT_NOT = '~',
   BIT_LSHIFT = '<<',
   BIT_RSHIFT = '>>',
-  BIT_U_LSHIFT = '<<<', // unsigned left bit shift
   BIT_U_RSHIFT = '>>>', // unsigned right bit shift
   INCREMENT = 'INCREMENT',
   DECREMENT = 'DECREMENT',
@@ -43,9 +42,9 @@ export enum TokenType {
   QUESTION = 'QUESTION',
   UNKNOWN = 'UNKNOWN',
   EOF = 'EOF',
-  PIPE = 'PIPE',
   PIPE_FORWARD = 'PIPE_FORWARD',
-  DOT_DOT = 'DOT_DOT'
+  DOT_DOT = 'DOT_DOT',
+  DOT_DOT_DOT = 'DOT_DOT_DOT'
 }
 
 export class Token {

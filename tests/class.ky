@@ -1,8 +1,8 @@
 import myDefaultClass from "./test.ky";
 import { myPublicClass } from "./test.ky";
-import myDefaultClass as Default, { myPublicClass as aliasForPublicClass } from "./test.ky";
+import myDefaultClass, { myPublicClass as aliasForPublicClass } from "./test.ky";
 import std from "kyro";
-import std as standard from "kyro";
+import std from "kyro";
 
 default static class MainClass {
     private int result = 0;

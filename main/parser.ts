@@ -1,5 +1,5 @@
 import { Token, TokenType } from "../types/tokens";
-import { tokenTypeToOperator, OperatorType } from "../types/operators";
+import { OperatorType, isOperator, ArithmeticOperators, ComparisonOperators, BitwiseOperators, LogicalOperators, OtherOperators } from "../types/operators";
 import { DataTypes, ControlFlow, Structures, Others } from "../types/keywords";
 import {
   Nodes,
@@ -10,6 +10,8 @@ import {
   SourceLocation,
   Expression,
   TypeReferenceKind,
+  ImportSpecifier,
+  LogicalExpression,
 } from "../ast/nodes";
 import { accessModifiers, allModifiers, immutabilityModifiers, Modifiers } from "../ast/modifiers";
 import { LocalErrors, BaseError, FileInput } from "../util/errors";
@@ -23,7 +25,8 @@ x- Implement control flow interaction (break, return, continue, function calling
 x- Implement array nodes (int[], type[] indentifier = ...)
 x- Implement classes and class-only keywords
 x- Implement property access (class.prop, array.[0])
-6- Array spread operator (...)
+x- Param rest operator (...)
+7- Import statements at beginning of file, inside parseInitialStatements() instead of parseStatement()
 x- Bitwise operations (>>, <<, &, |, ^)
 */
 
@@ -89,7 +92,26 @@ export class Parser {
     const body: Node[] = [];
     let hasErrors = false;
 
-    while (this.current && this.current.type !== TokenType.EOF) {
+    while (this.current && this.current.type != TokenType.EOF) {
+      const statement = this.parseInitialStatement();
+
+      if (statement instanceof BaseError) {
+        hasErrors = true;
+        this.synchronize();
+        
+        if(this.withinBounds(this.pos+1)) {
+          continue;
+        } else {
+          break;
+        }
+      }
+
+      if (statement === null) break;
+
+      body.push(statement);
+    }
+
+    while (this.current && this.current.type != TokenType.EOF) {
       const statement = this.parseStatement();
 
       if (statement instanceof BaseError) {
@@ -143,7 +165,7 @@ export class Parser {
       }
 
       if (
-        current.type === TokenType.IDENTIFIER ||
+        //current.type === TokenType.IDENTIFIER || // removed because return too many errors
         current.type === TokenType.EOF ||
 
         current.type === TokenType.LBRACE ||
@@ -154,6 +176,130 @@ export class Parser {
 
       this.advance();
     }
+  }
+
+  private parseInitialStatement(): ParseResult<Node> | null {
+    while (
+      this.current &&
+      this.current.type === TokenType.KEYWORD && 
+      this.current.value === Others.IMPORT
+    ) {
+      // parse imports
+
+      /*
+      import myDefaultClass from "./test.ky";
+      import myDefaultClass as Default, { myPublicClass as aliasForPublicClass } from "./test.ky";
+      import std from "kyro";
+      import std as standard from "kyro";
+      import { myPublicClass } from "./test.ky";
+      */
+      const importToken = this.current;
+      this.advance();
+
+      // typescript thinks current is still the last token so we need to redeclare
+      this.current = this.current; 
+
+      let defaultImport: NodeTypes["Identifier"] | ParseResult<NodeTypes["Identifier"]> | null = null;
+        
+      if(this.current.type === TokenType.IDENTIFIER) {
+        defaultImport = this.parseIdentifier();
+
+        if(defaultImport instanceof BaseError) return defaultImport;
+      };
+
+      const namedImports: ImportSpecifier[] = [];
+
+      if((defaultImport != null && this.consume(TokenType.COMMA)) || defaultImport === null) {
+        if(!this.consume(TokenType.LBRACE)) {
+          return this.errors.SyntaxError.throw(
+            "Expected '{'",
+            this.file,
+            this.getSource()
+          )
+        }
+
+        while(this.current.type != TokenType.RBRACE && this.current.type != TokenType.EOF) {
+
+          if(namedImports.length > 1) {
+            if(!this.consume(TokenType.COMMA)) {
+              return this.errors.SyntaxError.throw(
+                "Expected ',' before named import",
+                this.file,
+                this.getSource()
+              )
+            }
+          }
+
+          const namedImport = this.parseIdentifier();
+
+          if(namedImport instanceof BaseError) return namedImport;
+
+          if(this.consumeValue(TokenType.KEYWORD, Others.AS)) {
+            const importAlias = this.parseIdentifier();
+
+            if(importAlias instanceof BaseError) return importAlias;
+
+            namedImports.push({
+              importedName: namedImport,
+              localName: importAlias
+            });
+          } else {
+            namedImports.push({
+              importedName: namedImport,
+              localName: null
+            });
+          }
+        }
+
+        if(!this.consume(TokenType.RBRACE)) {
+          return this.errors.SyntaxError.throw(
+            "Expected '}'",
+            this.file,
+            this.getSource()
+          )
+        }
+      }
+
+      if(!this.consumeValue(TokenType.KEYWORD, Others.FROM)) {
+        return this.errors.SyntaxError.throw(
+          "Expected 'from' keyword",
+          this.file,
+          this.getSource()
+        )
+      }
+
+      if(this.current.type != TokenType.STRING) {
+        return this.errors.SyntaxError.throw(
+          "Expected a source string",
+          this.file,
+          this.getSource()
+        )
+      }
+
+      const source = new Nodes.StringLiteral(
+        this.getSource(),
+        this.current.value
+      );
+
+      this.advance();
+
+      if(!this.consume(TokenType.SEMICOLON)) {
+        return this.errors.SyntaxError.throw(
+          "Expected ';'",
+          this.file,
+          this.getSource()
+        )
+      }
+
+      return new Nodes.ImportDeclaration(
+        this.getSource(importToken),
+        defaultImport,
+        namedImports,
+        source
+      );
+    }
+    
+    return null;
   }
 
   private parseStatement(): ParseResult<Node> | null {
@@ -174,7 +320,7 @@ export class Parser {
 
           if (
             current.value === Others.CONST ||
-            current.value === Others.INFER ||
+            current.value === DataTypes.INFER ||
             Object.values(DataTypes).includes(current.value as any)
           ) {
             const varDecl = this.parseVariableDeclaration();
@@ -713,6 +859,10 @@ export class Parser {
   }
 
   private parseParameter(): ParseResult<NodeTypes["Parameter"]> {
+    const startLoc = this.getSource();
+
+    const isRest = this.consume(TokenType.DOT_DOT_DOT);
+
     const paramIdentifier = this.parseIdentifier();
     if (paramIdentifier instanceof BaseError) return paramIdentifier;
 
@@ -727,7 +877,7 @@ export class Parser {
     const paramType = this.parseTypeReference(TypeReferenceKind.ANY, true);
     if (paramType instanceof BaseError) return paramType;
 
-    return new Nodes.Parameter(this.getSource(), paramIdentifier, paramType);
+    return new Nodes.Parameter(startLoc, paramIdentifier, paramType, isRest);
   }
 
   private parseLiteralPattern(): ParseResult<NodeTypes["LiteralPattern"]> {
@@ -845,7 +995,7 @@ export class Parser {
     if (firstPattern instanceof BaseError) return firstPattern;
     patterns.push(firstPattern);
 
-    while (this.current && this.current.type === TokenType.PIPE) {
+    while (this.current && this.current.type === TokenType.BIT_OR) {
       this.advance();
       const pattern = this.parsePattern(allowGuards);
       if (pattern instanceof BaseError) return pattern;
@@ -974,6 +1124,58 @@ export class Parser {
     return parsed;
   }
   
+  private parseOperator(): OperatorType | null {
+    switch (this.current.type) {
+      // Arithmetic
+      case TokenType.PLUS:       this.advance(); return ArithmeticOperators.PLUS;
+      case TokenType.MINUS:      this.advance(); return ArithmeticOperators.MINUS;
+      case TokenType.ASTERISK:   this.advance(); return ArithmeticOperators.MULTIPLY;
+      case TokenType.SLASH:      this.advance(); return ArithmeticOperators.DIVIDE;
+      case TokenType.MOD:        this.advance(); return ArithmeticOperators.MOD;
+  
+      // Comparison
+      case TokenType.COMPARISON: {
+        switch (this.current.value) {
+          case "==": this.advance(); return ComparisonOperators.EQUAL;
+          case "!=": this.advance(); return ComparisonOperators.NOT_EQUAL;
+          case "<":  this.advance(); return ComparisonOperators.LESS_THAN;
+          case ">":  this.advance(); return ComparisonOperators.GREATER_THAN;
+          case "<=": this.advance(); return ComparisonOperators.LESS_EQUAL;
+          case ">=": this.advance(); return ComparisonOperators.GREATER_EQUAL;
+        }
+        return null;
+      }
+  
+      // Logical
+      case TokenType.LOGICAL_AND: this.advance(); return LogicalOperators.AND;
+      case TokenType.LOGICAL_OR:  this.advance(); return LogicalOperators.OR;
+      case TokenType.LOGICAL_NOT: this.advance(); return LogicalOperators.NOT;
+  
+      // Bitwise
+      case TokenType.BIT_AND:     this.advance(); return BitwiseOperators.BIT_AND;
+      case TokenType.BIT_OR:      this.advance(); return BitwiseOperators.BIT_OR;
+      case TokenType.BIT_XOR:     this.advance(); return BitwiseOperators.BIT_XOR;
+      case TokenType.BIT_NOT:     this.advance(); return BitwiseOperators.BIT_NOT;
+      case TokenType.BIT_LSHIFT:  this.advance(); return BitwiseOperators.BIT_LSHIFT;
+      case TokenType.BIT_RSHIFT:  this.advance(); return BitwiseOperators.BIT_RSHIFT;
+      case TokenType.BIT_U_RSHIFT:this.advance(); return BitwiseOperators.BIT_U_RSHIFT;
+  
+      // Other
+      case TokenType.INCREMENT:   this.advance(); return OtherOperators.INCREMENT;
+      case TokenType.DECREMENT:   this.advance(); return OtherOperators.DECREMENT;
+      case TokenType.LBRACKET: {
+        if (this.next().type === TokenType.RBRACKET) {
+          this.advance(); // LBRACKET
+          this.advance(); // RBRACKET
+          return OtherOperators.INDEX;
+        }
+        return null;
+      }
+  
+      default:
+        return null;
+    }
+  }  
 
   private parseClassMember(
     classIdentifier: NodeTypes["Identifier"]
@@ -985,11 +1187,104 @@ export class Parser {
     if(memberModifiers instanceof BaseError) return memberModifiers;      
     
     if (
+      memberModifiers.has("OPERATOR")
+    ) {
+      if(memberModifiers.hasAny("ASYNC")) {
+        this.errors.SyntaxError.throw(
+          "Operator overloads can't be asynchronous",
+          this.file,
+          this.getSource()
+        )
+      } else if(memberModifiers.has("READONLY")) {
+        this.errors.SyntaxError.throw(
+          "Operator overloads can't be readonly",
+          this.file,
+          this.getSource()
+        )
+      } else if(memberModifiers.has("DEFAULT")) {
+        this.errors.SyntaxError.throw(
+          "Operator overloads can't have the default modifier",
+          this.file,
+          this.getSource()
+        )
+      }
+
+      let operator = this.parseOperator();
+
+      if(operator === null) {
+        return this.errors.SyntaxError.throw(
+          "Invalid operator",
+          this.file,
+          this.getSource(operator)
+        )
+      }
+
+      const generics = this.parseGenerics();
+
+      if(generics instanceof BaseError) return generics;
+
+      const parameters = this.parseParameterList();
+
+      if(parameters instanceof BaseError) return parameters;
+
+      if (parameters.length === 1) {
+        switch (operator) {
+          case ArithmeticOperators.PLUS:
+            operator = ArithmeticOperators.UNARY_PLUS;
+            break;
+          case ArithmeticOperators.MINUS:
+            operator = ArithmeticOperators.UNARY_MINUS;
+            break;
+          case LogicalOperators.NOT:
+            operator = LogicalOperators.NOT;
+            break;
+          case BitwiseOperators.BIT_NOT:
+            operator = BitwiseOperators.BIT_NOT;
+            break;
+          case OtherOperators.INCREMENT:
+            operator = OtherOperators.INCREMENT;
+            break;
+          case OtherOperators.DECREMENT:
+            operator = OtherOperators.DECREMENT;
+            break;
+        }
+      } else if(parameters.length > 2) {
+        this.errors.SyntaxError.throw(
+          `Invalid number of parameters for operator ${operator}`,
+          this.file,
+          this.getSource()
+        );
+      }
+
+      const returnType = this.parseTypeReference(TypeReferenceKind.ANY, true);
+        
+      if (returnType instanceof BaseError) return returnType;
+
+      const body = this.parseBlock();
+
+      if(body instanceof BaseError) return body;
+
+      return new Nodes.OperatorDefinition(
+        this.getSource(),
+        memberModifiers.getNumberValue(),
+        operator,
+        parameters,
+        returnType,
+        body
+      )
+    } else if (
       this.current.type === TokenType.IDENTIFIER && (
         this.next()?.type === TokenType.LPAREN || this.next()?.type === TokenType.COMPARISON
       )
     ) {
       // parse method
+      if(memberModifiers.has("READONLY")) {
+        this.errors.SyntaxError.throw(
+          "Class methods can't be readonly",
+          this.file,
+          this.getSource()
+        )
+      }
 
       let identifier = this.parseIdentifier();
 
@@ -1051,7 +1346,7 @@ export class Parser {
         )
       }
     } else if (
-      this.current.value === Others.INFER ||
+      this.current.value === DataTypes.INFER ||
       Object.values(DataTypes).includes(this.current.value as any) ||
       (this.current.type === TokenType.IDENTIFIER && this.next().type === TokenType.IDENTIFIER)
     ) {
@@ -1201,11 +1496,25 @@ export class Parser {
     }
 
     const parameters: NodeTypes["Parameter"][] = [];
-    while (this.current && this.current.type !== TokenType.RPAREN) {
+
+    while (this.current.type != TokenType.EOF && this.current.type != TokenType.RPAREN) {
       const parameter = this.parseParameter();
       if (parameter instanceof BaseError) return parameter;
 
       parameters.push(parameter);
+
+      if (parameter.isRest) {
+        // tell typescript current is a new Token since parseParameter advanced for us.
+        if (this.current.type as TokenType != TokenType.RPAREN) {
+          return this.errors.SyntaxError.throw(
+            "A rest parameter must be last in a parameter list.",
+            this.file,
+            parameter.loc
+          );
+        }
+
+        break;
+      }
 
       if (this.current.type === TokenType.COMMA) {
         this.advance();
@@ -1276,14 +1585,6 @@ export class Parser {
 
     const parameters = this.parseParameterList();
     if (parameters instanceof BaseError) return parameters;
-
-    if (!this.consume(TokenType.RPAREN)) {
-      return this.errors.SyntaxError.throw(
-        `Expected ')' after parameter list`,
-        this.file,
-        this.getSource(),
-      );
-    }
 
     if (!this.consume(TokenType.COLON)) {
       return this.errors.SyntaxError.throw(
@@ -1426,7 +1727,7 @@ export class Parser {
     NodeTypes["TypeReference"] | NodeTypes["ArrayType"] | NodeTypes["VoidType"]
   > {
     const current = this.current;
-    if (current.type === TokenType.KEYWORD && current.value === Others.VOID) {
+    if (current.type === TokenType.KEYWORD && current.value === DataTypes.VOID) {
       this.advance();
       return new Nodes.VoidType(this.getSource(current));
     }
@@ -1570,7 +1871,7 @@ export class Parser {
       | NodeTypes["ArrayType"]
       | null = null;
 
-    if (this.checkToken(TokenType.KEYWORD, Others.INFER)) {
+    if (this.checkToken(TokenType.KEYWORD, DataTypes.INFER)) {
       type = new Nodes.InferType(this.getSource());
       this.advance();
     } else {
@@ -2124,7 +2425,8 @@ export class Parser {
 
     while (
       this.current.type === TokenType.BIT_LSHIFT ||
-      this.current.type === TokenType.BIT_RSHIFT
+      this.current.type === TokenType.BIT_RSHIFT ||
+      this.current.type === TokenType.BIT_U_RSHIFT
     ) {
       const operator = this.current;
       this.advance();

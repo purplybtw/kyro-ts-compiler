@@ -47,7 +47,7 @@ async function main() {
   }
 
   const jv = new KyroInstance(
-    renderFileInput("./tests/match.ky"), 
+    renderFileInput("./tests/class.ky"), 
     "process",
     null, // error/warn handlers not needed -> running in process mode
     ky_arguments

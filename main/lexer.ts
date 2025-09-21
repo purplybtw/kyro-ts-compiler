@@ -156,18 +156,18 @@ export class Lexer {
     }
     
     if (current === "<" && next === "<") {
-      if (this.pos + 2 < this.input.length && this.input[this.pos + 2] === "<") {
-        this.advance(3);
-        return new Token(TokenType.BIT_U_LSHIFT, "<<<", this.pos - 3, prevLine, prevCol);
-      } else {
-        this.advance(2);
-        return new Token(TokenType.BIT_LSHIFT, "<<", this.pos - 2, prevLine, prevCol);
-      }
+      this.advance(2);
+      return new Token(TokenType.BIT_LSHIFT, "<<", this.pos - 2, prevLine, prevCol);
     }    
 
     if (current === "." && next === ".") {
-      this.advance(2);
-      return new Token(TokenType.DOT_DOT, "..", this.pos - 2, prevLine, prevCol);
+      if (this.pos + 2 < this.input.length && this.input[this.pos + 2] === ".") {
+        this.advance(3);
+        return new Token(TokenType.DOT_DOT_DOT, "...", this.pos - 3, prevLine, prevCol);
+      } else {
+        this.advance(2);
+        return new Token(TokenType.DOT_DOT, "..", this.pos - 2, prevLine, prevCol);
+      }
     }
 
     if (
@@ -223,10 +223,6 @@ export class Lexer {
       case ';': {
         this.advance();
         return new Token(TokenType.SEMICOLON, ';', this.pos - 1, prevLine, prevCol);
-      }
-      case '|': {
-        this.advance();
-        return new Token(TokenType.PIPE, '|', this.pos - 1, prevLine, prevCol);
       }
       case ':': {
         this.advance();

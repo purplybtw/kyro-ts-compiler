@@ -20,15 +20,15 @@ export enum DataTypes {
   INT = "int",
   FLOAT = "float",
   CHAR = "char",
-  BOOL = "bool"
+  BOOL = "bool",
+  VOID = "void",
+  INFER = "infer",
 }
 
 export enum Structures {
   CLASS = "class",
   TYPE = "type",
   NEW = "new",
-  ASYNC = "async",
-  AWAIT = "await",
   MATCH = "match",
   CHECK = "check",
   FUNC = "func",
@@ -37,6 +37,7 @@ export enum Structures {
   PRIVATE = "private",
   PUBLIC = "public",
   STATIC = "static",
+  OPERATOR = "operator",
   PROTECTED = "protected",
   READONLY = "readonly",
   FINAL = "final",
@@ -45,13 +46,21 @@ export enum Structures {
 }
 
 export enum Others {
-  VOID = "void",
   CONST = "const",
-  NULL = "null",
   AS = "as",
-  INFER = "infer",
+  IMPORT = "import",
+  FROM = "from"
+}
+
+export enum Execution {
+  ASYNC = "async",
+  AWAIT = "await"
+}
+
+export enum Literals {
+  NULL = "null",
   UNDEFINED = "undefined",
-  OPERATOR = "operator"
+  NAN = "NaN",
 }
 
 export const KEYWORDS = [
