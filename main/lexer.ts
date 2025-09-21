@@ -413,6 +413,12 @@ export class Lexer {
 
     if (value === 'true' || value === 'false') {
       return new Token(TokenType.BOOLEAN, value, startPos, prevLine, prevCol);
+    } else if(value === 'null') {
+      return new Token(TokenType.NULL, value, startPos, prevLine, prevCol);
+    } else if(value === 'undefined') {
+      return new Token(TokenType.UNDEFINED, value, startPos, prevLine, prevCol);
+    } else if(value === 'NaN') {
+      return new Token(TokenType.NAN, value, startPos, prevLine, prevCol);
     } else if (this.isKeyword(value)) {
       return new Token(TokenType.KEYWORD, value, startPos, prevLine, prevCol);
     }

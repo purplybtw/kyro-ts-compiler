@@ -44,7 +44,10 @@ export enum TokenType {
   EOF = 'EOF',
   PIPE_FORWARD = 'PIPE_FORWARD',
   DOT_DOT = 'DOT_DOT',
-  DOT_DOT_DOT = 'DOT_DOT_DOT'
+  DOT_DOT_DOT = 'DOT_DOT_DOT',
+  NULL = "NULL",
+  UNDEFINED = "UNDEFINED",
+  NAN = "NAN",
 }
 
 export class Token {

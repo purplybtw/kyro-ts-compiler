@@ -57,17 +57,12 @@ export enum Execution {
   AWAIT = "await"
 }
 
-export enum Literals {
-  NULL = "null",
-  UNDEFINED = "undefined",
-  NAN = "NaN",
-}
-
 export const KEYWORDS = [
   ...Object.values(DataTypes),
   ...Object.values(ControlFlow),
   ...Object.values(Structures),
-  ...Object.values(Others)
+  ...Object.values(Others),
+  ...Object.values(Execution)
 ] as const;
 
 export type Keyword = typeof KEYWORDS[number];

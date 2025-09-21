@@ -282,7 +282,7 @@ export class ArrayExpression extends Node {
 
 export class VariableDeclaration extends Node {
   type = "VariableDeclaration" as const
-  constructor(loc: SourceLocation, public isConstant: boolean, public varType: TypeReference | InferType | ArrayType, public identifiers: Identifier[], public initializer?: Node) {
+  constructor(loc: SourceLocation, public isConstant: boolean, public varType: TypeReference | InferType | ArrayType | NullLiteral | UndefinedLiteral, public identifiers: Identifier[], public initializer?: Node) {
     super(loc)
   }
 
@@ -437,7 +437,7 @@ export class ContinueStatement extends Node {
 
 export class FunctionDeclaration extends Node {
   type = "FunctionDeclaration" as const
-  constructor(loc: SourceLocation, public returnType: TypeReference | ArrayType | VoidType, public identifier: Identifier, public parameters: Parameter[], public body: Block, public generics: TypeReference[] = []) {
+  constructor(loc: SourceLocation, public returnType: TypeReference | ArrayType | VoidType | NullLiteral | UndefinedLiteral, public identifier: Identifier, public parameters: Parameter[], public body: Block, public generics: TypeReference[] = []) {
     super(loc)
   }
   accept<T>(visitor: BaseVisitor<T>): T {
@@ -821,7 +821,7 @@ export class MethodDefinition extends ClassMember {
     public identifier: Identifier, 
     public generics: TypeReference[],
     public parameters: Parameter[], 
-    public returnType: TypeReference | ArrayType | VoidType,
+    public returnType: TypeReference | ArrayType | VoidType | NullLiteral | UndefinedLiteral,
     public body: Block
   ) {
     super(loc, modifiers)
@@ -854,7 +854,7 @@ export class PropertyDefinition extends ClassMember {
   constructor(
     loc: SourceLocation, 
     public modifiers: Modifiers,
-    public varType: TypeReference | ArrayType | InferType, 
+    public varType: TypeReference | ArrayType | InferType | NullLiteral | UndefinedLiteral, 
     public identifier: Identifier, 
     public initializer?: Node,
   ) {

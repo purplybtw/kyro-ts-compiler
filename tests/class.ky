@@ -1,14 +1,14 @@
-import myDefaultClass from "./test.ky";
+/*import myDefaultClass from "./test.ky";
 import { myPublicClass } from "./test.ky";
 import myDefaultClass, { myPublicClass as aliasForPublicClass } from "./test.ky";
 import std from "kyro";
-import std from "kyro";
+import std from "kyro";*/
 
 default static class MainClass {
-    private int result = 0;
+    private int result = 0 + null;
     private Parser parser;
 
-    public static add(a: number, b: number): void {
+    public static operator +(a: int, b: int, c:int): void {
         return a + b;
     }
 

@@ -1,6 +1,6 @@
 import { Token, TokenType } from "../types/tokens";
 import { OperatorType, isOperator, ArithmeticOperators, ComparisonOperators, BitwiseOperators, LogicalOperators, OtherOperators } from "../types/operators";
-import { DataTypes, ControlFlow, Structures, Others } from "../types/keywords";
+import { DataTypes, ControlFlow, Structures, Others, Execution } from "../types/keywords";
 import {
   Nodes,
   Program,
@@ -1227,7 +1227,7 @@ export class Parser {
 
       if(parameters instanceof BaseError) return parameters;
 
-      if (parameters.length === 1) {
+      if (parameters.length === 0) {
         switch (operator) {
           case ArithmeticOperators.PLUS:
             operator = ArithmeticOperators.UNARY_PLUS;
@@ -1248,12 +1248,20 @@ export class Parser {
             operator = OtherOperators.DECREMENT;
             break;
         }
-      } else if(parameters.length > 2) {
-        this.errors.SyntaxError.throw(
+      } else if(parameters.length > 1) {
+        return this.errors.SyntaxError.throw(
           `Invalid number of parameters for operator ${operator}`,
           this.file,
           this.getSource()
         );
+      }
+
+      if(!this.consume(TokenType.COLON)) {
+        return this.errors.SyntaxError.throw(
+          "Expected ':' before return type",
+          this.file,
+          this.getSource()
+        )
       }
 
       const returnType = this.parseTypeReference(TypeReferenceKind.ANY, true);
@@ -1725,11 +1733,19 @@ export class Parser {
 
   private parseFunctionTypeReference(): ParseResult<
     NodeTypes["TypeReference"] | NodeTypes["ArrayType"] | NodeTypes["VoidType"]
+    | NodeTypes["NullLiteral"] | NodeTypes["UndefinedLiteral"]
   > {
     const current = this.current;
+
     if (current.type === TokenType.KEYWORD && current.value === DataTypes.VOID) {
       this.advance();
       return new Nodes.VoidType(this.getSource(current));
+    } else if(current.type === TokenType.NULL) {
+      this.advance();
+      return new Nodes.NullLiteral(this.getSource(current));
+    } else if(current.type === TokenType.UNDEFINED) {
+      this.advance();
+      return new Nodes.UndefinedLiteral(this.getSource(current));
     }
     return this.parseTypeReference(TypeReferenceKind.ANY, true);
   }
@@ -1864,15 +1880,25 @@ export class Parser {
     NodeTypes["TypeReference"]
     | NodeTypes["InferType"]
     | NodeTypes["ArrayType"]
+    | NodeTypes["NullLiteral"]
+    | NodeTypes["UndefinedLiteral"]
   > {
     let type:
       NodeTypes["TypeReference"]
       | NodeTypes["InferType"]
       | NodeTypes["ArrayType"]
+      | NodeTypes["NullLiteral"]
+      | NodeTypes["UndefinedLiteral"]
       | null = null;
 
     if (this.checkToken(TokenType.KEYWORD, DataTypes.INFER)) {
       type = new Nodes.InferType(this.getSource());
+      this.advance();
+    } else if(this.current.type === TokenType.NULL) {
+      type = new Nodes.NullLiteral(this.getSource());
+      this.advance();
+    } else if(this.current.type === TokenType.UNDEFINED) {
+      type = new Nodes.UndefinedLiteral(this.getSource());
       this.advance();
     } else {
       const parsedType = this.parseTypeReference(TypeReferenceKind.ANY, true);
@@ -2480,6 +2506,20 @@ export class Parser {
       );
     }
 
+    if (
+      current.type === TokenType.KEYWORD &&
+      current.value === Execution.AWAIT
+    ) {
+      this.advance();
+      const operand = this.parseUnaryExpression();
+      if (operand instanceof BaseError) return operand;
+
+      return new Nodes.AwaitExpression(
+        this.getSource(current),
+        operand
+      );
+    }
+
     return this.parsePostfixExpression();
   }
 
@@ -2565,24 +2605,8 @@ export class Parser {
         const parsedGenerics = this.parseGenerics();
         if (parsedGenerics instanceof BaseError) return parsedGenerics;
 
-        if (this.current.type !== TokenType.LPAREN) {
-          return this.errors.SyntaxError.throw(
-            `Expected '(' after generics in call expression`,
-            this.file,
-            this.getSource(),
-          );
-        }
-
         const parameters = this.parseCallParameterList();
         if (parameters instanceof BaseError) return parameters;
-
-        if (!this.consume(TokenType.RPAREN)) {
-          return this.errors.SyntaxError.throw(
-            `Expected ')' after call expression`,
-            this.file,
-            this.getSource(),
-          );
-        }
 
         expr = new Nodes.CallExpression(
           this.getSource(),
@@ -2593,14 +2617,6 @@ export class Parser {
       } else if (current.type === TokenType.LPAREN) {
         const parameters = this.parseCallParameterList();
         if (parameters instanceof BaseError) return parameters;
-
-        if (!this.consume(TokenType.RPAREN)) {
-          return this.errors.SyntaxError.throw(
-            `Expected ')' after call expression`,
-            this.file,
-            this.getSource(),
-          );
-        }
 
         expr = new Nodes.CallExpression(this.getSource(), expr, [], parameters);
       } else if (
@@ -2662,68 +2678,85 @@ export class Parser {
   private parsePrimaryExpression(): ParseResult<Node> {
     const current = this.current;
 
-    if (current.type === TokenType.LBRACKET) {
-      return this.parseArrayExpression();
-    }
+    switch (current.type) {
+      case TokenType.LBRACKET:
+        return this.parseArrayExpression();
 
-    if (current.type === TokenType.BOOLEAN) {
-      this.advance();
-      return new Nodes.BooleanLiteral(
-        this.getSource(current),
-        current.value === "true",
-      );
-    }
-
-    if (current.type === TokenType.NUMBER) {
-      this.advance();
-      return new Nodes.NumberLiteral(
-        this.getSource(current),
-        parseFloat(current.value),
-      );
-    }
-
-    if (current.type === TokenType.STRING) {
-      this.advance();
-      return new Nodes.StringLiteral(this.getSource(current), current.value);
-    }
-
-    if(current.type === TokenType.KEYWORD) {
-      if(current.value === Structures.NEW) {
-        return this.parseNewExpression();
-      } else if(current.value === Structures.THIS) {
+      case TokenType.BOOLEAN:
         this.advance();
-        return new Nodes.ThisReference(this.getSource(current));
-      } else if(current.value === Structures.MATCH) {
-        return this.parseMatchExpression();
-      }
-    }
-
-    if (current.type === TokenType.IDENTIFIER) {
-      if (
-        this.next().type === TokenType.LPAREN ||
-        this.isGenericPattern(this.pos + 1)
-      ) {
-        return this.parseCallExpression();
-      }
-
-      this.advance();
-      return new Nodes.Identifier(this.getSource(current), current.value);
-    }
-
-    if (current.type === TokenType.LPAREN) {
-      this.advance();
-      const expr = this.parseExpression();
-      if (expr instanceof BaseError) return expr;
-
-      if (!this.consume(TokenType.RPAREN)) {
-        return this.errors.SyntaxError.throw(
-          `Expected ')' after expression`,
-          this.file,
-          this.getSource(),
+        return new Nodes.BooleanLiteral(
+          this.getSource(current),
+          current.value === "true",
         );
-      }
 
-      return expr;
+      case TokenType.UNDEFINED:
+        this.advance();
+        return new Nodes.UndefinedLiteral(
+          this.getSource(current)
+        );
+      
+      case TokenType.NULL:
+        this.advance();
+        return new Nodes.NullLiteral(
+          this.getSource(current)
+        );
+
+      case TokenType.NAN:
+        this.advance();
+        return new Nodes.NaNLiteral(
+          this.getSource(current)
+        );
+
+      case TokenType.NUMBER:
+        this.advance();
+        return new Nodes.NumberLiteral(
+          this.getSource(current),
+          parseFloat(current.value),
+        );
+
+      case TokenType.STRING:
+        this.advance();
+        return new Nodes.StringLiteral(this.getSource(current), current.value);
+
+      case TokenType.KEYWORD:
+        switch (current.value) {
+          case Structures.NEW:
+            return this.parseNewExpression();
+          case Structures.THIS:
+            this.advance();
+            return new Nodes.ThisReference(this.getSource(current));
+          case Structures.MATCH:
+            return this.parseMatchExpression();
+          default:
+            break;
+        }
+        break;
+
+      case TokenType.IDENTIFIER:
+        if (
+          this.next().type === TokenType.LPAREN ||
+          this.isGenericPattern(this.pos + 1)
+        ) {
+          return this.parseCallExpression();
+        }
+        this.advance();
+        return new Nodes.Identifier(this.getSource(current), current.value);
+
+      case TokenType.LPAREN: {
+        this.advance();
+        const expr = this.parseExpression();
+        if (expr instanceof BaseError) return expr;
+
+        if (!this.consume(TokenType.RPAREN)) {
+          return this.errors.SyntaxError.throw(
+            `Expected ')' after expression`,
+            this.file,
+            this.getSource(),
+          );
+        }
+
+        return expr;
+      }
     }
 
     return this.errors.SyntaxError.throw(
