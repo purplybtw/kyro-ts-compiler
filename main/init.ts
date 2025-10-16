@@ -72,9 +72,11 @@ export default class KyroInstance {
 
     //if(ast.body.length === 1) console.log(evaluateExpression(ast.body[0]));
 
-    console.log('\n=== Abstract Syntax Tree ===\n');
+    console.log('\nAST (Abstract Syntax Tree)\n');
     console.log(`Parsed AST after ${Date.now()-startTime}ms:`, ast);
-    console.log('\n=== Visual AST ===\n');
+    console.log('\nFull AST\n');
     console.log(Logger.log(ast));
+
+    console.log('\nChecking semantics\n');
   }
 }

@@ -4,6 +4,95 @@ import { OperatorType } from "../types/operators";
 export abstract class Visitor<T> implements BaseVisitor<T> {
   abstract default(node: Node): T;
 
+  visitNode(node: Node): T {
+    switch (node.type) {
+        case "NumberLiteral": return this.visitNumberLiteral(node as NumberLiteral);
+        case "StringLiteral": return this.visitStringLiteral(node as StringLiteral);
+        case "BooleanLiteral": return this.visitBooleanLiteral(node as BooleanLiteral);
+        case "Identifier": return this.visitIdentifier(node as Identifier);
+        case "BinaryExpression": return this.visitBinaryExpression(node as BinaryExpression);
+        case "LogicalExpression": return this.visitLogicalExpression(node as LogicalExpression);
+        case "ConditionalExpression": return this.visitConditionalExpression(node as ConditionalExpression);
+        case "UnaryExpression": return this.visitUnaryExpression(node as UnaryExpression);
+        case "UpdateExpression": return this.visitUpdateExpression(node as UpdateExpression);
+        case "CallExpression": return this.visitCallExpression(node as CallExpression);
+        case "MemberExpression": return this.visitMemberExpression(node as MemberExpression);
+        case "ArrayExpression": return this.visitArrayExpression(node as ArrayExpression);
+        case "VariableDeclaration": return this.visitVariableDeclaration(node as VariableDeclaration);
+        case "Assignment": return this.visitAssignment(node as Assignment);
+        case "ExpressionStatement": return this.visitExpressionStatement(node as ExpressionStatement);
+        case "Block": return this.visitBlock(node as Block);
+        case "IfStatement": return this.visitIfStatement(node as IfStatement);
+        case "ElseIfStatement": return this.visitElseIfStatement(node as ElseIfStatement);
+        case "WhileStatement": return this.visitWhileStatement(node as WhileStatement);
+        case "ForStatement": return this.visitForStatement(node as ForStatement);
+        case "ReturnStatement": return this.visitReturnStatement(node as ReturnStatement);
+        case "BreakStatement": return this.visitBreakStatement(node as BreakStatement);
+        case "ContinueStatement": return this.visitContinueStatement(node as ContinueStatement);
+        case "FunctionDeclaration": return this.visitFunctionDeclaration(node as FunctionDeclaration);
+        case "TypeDeclaration": return this.visitTypeDeclaration(node as TypeDeclaration);
+        case "Parameter": return this.visitParameter(node as Parameter);
+        case "TypeReference": return this.visitTypeReference(node as TypeReference);
+        case "ArrayType": return this.visitArrayType(node as ArrayType);
+        case "UnionType": return this.visitUnionType(node as UnionType);
+        case "IntersectionType": return this.visitIntersectionType(node as IntersectionType);
+        case "Program": return this.visitProgram(node as Program);
+        case "NewExpression": return this.visitNewExpression(node as NewExpression);
+        case "ObjectExpression": return this.visitObjectExpression(node as ObjectExpression);
+        case "Property": return this.visitProperty(node as Property);
+        case "MatchExpression": return this.visitMatchExpression(node as MatchExpression);
+        case "MatchArm": return this.visitMatchArm(node as MatchArm);
+        case "SwitchStatement": return this.visitSwitchStatement(node as SwitchStatement);
+        case "SwitchCase": return this.visitSwitchCase(node as SwitchCase);
+        case "LiteralPattern": return this.visitLiteralPattern(node as LiteralPattern);
+        case "RangePattern": return this.visitRangePattern(node as RangePattern);
+        case "IdentifierPattern": return this.visitIdentifierPattern(node as IdentifierPattern);
+        case "BindingPattern": return this.visitBindingPattern(node as BindingPattern);
+        case "GuardedPattern": return this.visitGuardedPattern(node as GuardedPattern);
+        case "CheckExpression": return this.visitCheckExpression(node as CheckExpression);
+        case "CheckComparison": return this.visitCheckComparison(node as CheckComparison);
+        case "RangeExpression": return this.visitRangeExpression(node as RangeExpression);
+        case "InferType": return this.visitInferType(node as InferType);
+        case "VoidType": return this.visitVoidType(node as VoidType);
+        case "ThrowStatement": return this.visitThrowStatement(node as ThrowStatement);
+        case "TryStatement": return this.visitTryStatement(node as TryStatement);
+        case "CatchClause": return this.visitCatchClause(node as CatchClause);
+        case "FinallyClause": return this.visitFinallyClause(node as FinallyClause);
+        case "ClassDeclaration": return this.visitClassDeclaration(node as ClassDeclaration);
+        case "MethodDefinition": return this.visitMethodDefinition(node as MethodDefinition);
+        case "PropertyDefinition": return this.visitPropertyDefinition(node as PropertyDefinition);
+        case "Constructor": return this.visitConstructor(node as Constructor);
+        case "Super": return this.visitSuper(node as Super);
+        case "ThisReference": return this.visitThisReference(node as ThisReference);
+        case "WildcardPattern": return this.visitWildcardPattern(node as WildcardPattern);
+        case "MemberPattern": return this.visitMemberPattern(node as MemberPattern);
+        case "OperatorDefinition": return this.visitOperatorDefinition(node as OperatorDefinition);
+        case "AwaitExpression": return this.visitAwaitExpression(node as AwaitExpression);
+        case "ImportDeclaration": return this.visitImportDeclaration(node as ImportDeclaration);
+        case "UndefinedLiteral": return this.visitUndefinedLiteral(node as UndefinedLiteral);
+        case "NaNLiteral": return this.visitNaNLiteral(node as NaNLiteral);
+        case "NullLiteral": return this.visitNullLiteral(node as NullLiteral);
+        case "IsExpression": return this.visitIsExpression(node as IsExpression);
+        default: return this.default(node); // fallback for unhandled nodes
+    }
+  }
+  traverse(program: Program): void {
+    const visitChildren = (node: Node) => {
+      this.visitNode(node);
+
+      for (const key in node) {
+        const value = (node as any)[key];
+
+        if (value instanceof Node) {
+          visitChildren(value);
+        } else if (Array.isArray(value)) {
+          value.forEach(v => v instanceof Node && visitChildren(v));
+        }
+      }
+    };
+
+    visitChildren(program);
+  }
   visitNumberLiteral(node: NumberLiteral): T { return this.default(node); }
   visitStringLiteral(node: StringLiteral): T { return this.default(node); }
   visitBooleanLiteral(node: BooleanLiteral): T { return this.default(node); }
@@ -516,7 +605,7 @@ export class ImportDeclaration extends Node {
   type = "ImportDeclaration" as const
   constructor(
     loc: SourceLocation,
-    public defaultImport: Identifier | null,
+    public defaultImport: Identifier | "*" | null,
     public namedImports: ImportSpecifier[],
     public source: StringLiteral
   ) {
@@ -798,9 +887,12 @@ export class ClassDeclaration extends Node {
     loc: SourceLocation, 
     public modifiers: Modifiers,
     public identifier: Identifier, 
-    public extending?: TypeReference, 
-    public interfaces: TypeReference[] = [], 
-    public body: ClassMember[] = []
+    public extending: TypeReference | null, 
+    public interfaces: TypeReference[], 
+    public ctor: Constructor | null,
+    public properties: PropertyDefinition[] = [],
+    public methods: MethodDefinition[] = [],
+    public operators: OperatorDefinition[] = [],
   ) {
     super(loc)
   }

@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{1B1A601E-10FE-9234-592C-D16006AE9737}</ProjectGuid>
+    <ProjectGuid>{0F8074B4-9F7C-6E2B-6FED-098A0F97E2D1}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>jv_bridge</RootNamespace>
+    <RootNamespace>bridge</RootNamespace>
     <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
     <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
@@ -48,7 +48,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\include\node;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\src;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\openssl\config;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\openssl\openssl\include;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\uv\include;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\zlib;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\v8\include;C:\Users\Usuario\Documents\Projects\javon\node_modules\node-addon-api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\include\node;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\src;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\openssl\config;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\openssl\openssl\include;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\uv\include;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\zlib;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\v8\include;..\&quot;C:\Users\Usuario\Documents\Projects\kyro\node_modules\node-addon-api&quot;;C:\Users\Usuario\Documents\Projects\kyro\node_modules\node-addon-api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/Zc:__cplusplus -std:c++20 /Zm2000 %(AdditionalOptions)</AdditionalOptions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <BufferSecurityCheck>true</BufferSecurityCheck>
@@ -60,7 +60,7 @@
       <OmitFramePointers>false</OmitFramePointers>
       <Optimization>Disabled</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=jv_bridge;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;_GLIBCXX_USE_CXX11_ABI=1;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=0;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;NAPI_DISABLE_CPP_EXCEPTIONS;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;DEBUG;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=bridge;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;_GLIBCXX_USE_CXX11_ABI=1;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=0;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;NAPI_DISABLE_CPP_EXCEPTIONS;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;DEBUG;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <StringPooling>true</StringPooling>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -84,13 +84,13 @@
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <ResourceCompile>
-      <AdditionalIncludeDirectories>C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\include\node;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\src;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\openssl\config;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\openssl\openssl\include;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\uv\include;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\zlib;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\v8\include;C:\Users\Usuario\Documents\Projects\javon\node_modules\node-addon-api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=jv_bridge;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;_GLIBCXX_USE_CXX11_ABI=1;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=0;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;NAPI_DISABLE_CPP_EXCEPTIONS;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;DEBUG;_DEBUG;%(PreprocessorDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\include\node;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\src;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\openssl\config;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\openssl\openssl\include;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\uv\include;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\zlib;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\v8\include;..\&quot;C:\Users\Usuario\Documents\Projects\kyro\node_modules\node-addon-api&quot;;C:\Users\Usuario\Documents\Projects\kyro\node_modules\node-addon-api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=bridge;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;_GLIBCXX_USE_CXX11_ABI=1;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=0;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;NAPI_DISABLE_CPP_EXCEPTIONS;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;DEBUG;_DEBUG;%(PreprocessorDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\include\node;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\src;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\openssl\config;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\openssl\openssl\include;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\uv\include;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\zlib;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\v8\include;C:\Users\Usuario\Documents\Projects\javon\node_modules\node-addon-api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\include\node;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\src;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\openssl\config;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\openssl\openssl\include;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\uv\include;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\zlib;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\v8\include;..\&quot;C:\Users\Usuario\Documents\Projects\kyro\node_modules\node-addon-api&quot;;C:\Users\Usuario\Documents\Projects\kyro\node_modules\node-addon-api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/Zc:__cplusplus -std:c++20 /Zm2000 %(AdditionalOptions)</AdditionalOptions>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
@@ -104,7 +104,7 @@
       <OmitFramePointers>true</OmitFramePointers>
       <Optimization>Full</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=jv_bridge;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;_GLIBCXX_USE_CXX11_ABI=1;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=0;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;NAPI_DISABLE_CPP_EXCEPTIONS;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=bridge;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;_GLIBCXX_USE_CXX11_ABI=1;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=0;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;NAPI_DISABLE_CPP_EXCEPTIONS;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <StringPooling>true</StringPooling>
@@ -129,18 +129,18 @@
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <ResourceCompile>
-      <AdditionalIncludeDirectories>C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\include\node;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\src;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\openssl\config;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\openssl\openssl\include;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\uv\include;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\zlib;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\v8\include;C:\Users\Usuario\Documents\Projects\javon\node_modules\node-addon-api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=jv_bridge;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;_GLIBCXX_USE_CXX11_ABI=1;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=0;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;NAPI_DISABLE_CPP_EXCEPTIONS;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;%(PreprocessorDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\include\node;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\src;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\openssl\config;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\openssl\openssl\include;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\uv\include;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\zlib;C:\Users\Usuario\AppData\Local\node-gyp\Cache\22.15.0\deps\v8\include;..\&quot;C:\Users\Usuario\Documents\Projects\kyro\node_modules\node-addon-api&quot;;C:\Users\Usuario\Documents\Projects\kyro\node_modules\node-addon-api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NODE_GYP_MODULE_NAME=bridge;USING_UV_SHARED=1;USING_V8_SHARED=1;V8_DEPRECATION_WARNINGS=1;_GLIBCXX_USE_CXX11_ABI=1;WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_HAS_EXCEPTIONS=0;NOMINMAX;OPENSSL_NO_PINSHARED;OPENSSL_THREADS;NAPI_DISABLE_CPP_EXCEPTIONS;BUILDING_NODE_EXTENSION;HOST_BINARY=&quot;node.exe&quot;;%(PreprocessorDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="..\binding.gyp"/>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\bridge\main.cpp">
-      <ObjectFileName>$(IntDir)\bridge\main.obj</ObjectFileName>
+    <ClCompile Include="..\lib\bridge\main.cpp">
+      <ObjectFileName>$(IntDir)\lib\bridge\main.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="C:\Users\Usuario\Documents\Projects\javon\node_modules\node-gyp\src\win_delay_load_hook.cc"/>
+    <ClCompile Include="C:\Users\Usuario\Documents\Projects\kyro\node_modules\node-gyp\src\win_delay_load_hook.cc"/>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
   <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets"/>

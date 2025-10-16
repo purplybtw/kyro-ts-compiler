@@ -461,7 +461,10 @@ export class Parser {
           return new Nodes.ExpressionStatement(this.getSource(current), parsed);
         }
 
-        case TokenType.LBRACE:
+        case TokenType.LBRACE: {
+          return this.parseBlock();
+        }
+
         case TokenType.RBRACE: {
           return this.errors.UnexpectedTokenError.throw(
             `Unexpected token '${current.value}'`,
@@ -1431,9 +1434,12 @@ export class Parser {
 
   private parseClassBody(
     classIdentifier: NodeTypes["Identifier"]
-  ): ParseResult<NodeTypes["ClassMember"][]> {
-    const members: NodeTypes["ClassMember"][] = [];
-
+  ): ParseResult<{
+    properties: NodeTypes["PropertyDefinition"][], 
+    methods: NodeTypes["MethodDefinition"][], 
+    operators: NodeTypes["OperatorDefinition"][], 
+    ctor: NodeTypes["Constructor"] | null
+  }> {
     if (!this.consume(TokenType.LBRACE)) {
       return this.errors.SyntaxError.throw(
         `Expected '{'`,
@@ -1441,11 +1447,33 @@ export class Parser {
         this.getSource(),
       );
     }
+
+    let constructor: NodeTypes["Constructor"] | null = null;
+    const properties: NodeTypes["PropertyDefinition"][] = [];
+    const methods: NodeTypes["MethodDefinition"][] = [];
+    const operators: NodeTypes["OperatorDefinition"][] = [];
     
     while (this.current && this.current.type !== TokenType.RBRACE && this.current.type !== TokenType.EOF) {
       const member = this.parseClassMember(classIdentifier);
       if (member instanceof BaseError) return member;
-      members.push(member);
+
+      if(member instanceof Nodes.Constructor) {
+        if(constructor === null) {
+          constructor = member;
+        } else {
+          return this.errors.SyntaxError.throw(
+            "A class can only have one constructor.",
+            this.file,
+            member.loc
+          )
+        }
+      } else if (member instanceof Nodes.PropertyDefinition) {
+        properties.push(member);
+      } else if (member instanceof Nodes.MethodDefinition) {
+        methods.push(member);
+      } else if (member instanceof Nodes.OperatorDefinition) {
+        operators.push(member);
+      }
     }
   
     if (!this.consume(TokenType.RBRACE)) {
@@ -1456,7 +1484,7 @@ export class Parser {
       );
     }
   
-    return members;
+    return {operators, properties, methods, ctor: constructor};
   }
 
   private parseClassDeclaration(modifiers: typeof Modifiers): ParseResult<
@@ -1468,7 +1496,7 @@ export class Parser {
     const identifier = this.parseIdentifier();
     if (identifier instanceof BaseError) return identifier;
 
-    let extending: NodeTypes["TypeReference"] | undefined;
+    let extending: NodeTypes["TypeReference"] | null = null;
     let implementing: NodeTypes["TypeReference"][] = [];
 
     if (this.checkToken(TokenType.KEYWORD, Structures.EXTENDS)) {
@@ -1518,7 +1546,10 @@ export class Parser {
       identifier,
       extending,
       implementing,
-      classBody
+      classBody.ctor,
+      classBody.properties,
+      classBody.methods,
+      classBody.operators
     );
   }
 

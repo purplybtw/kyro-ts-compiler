@@ -7,15 +7,13 @@
   "scripts": {
     "kyro": "npx tsx ./index.ts skipped",
     "web": "npx tsx ./web/server.ts",
-    "build": "cd lib && npx node-gyp rebuild && cd .. && npx tsx index.ts built",
-    "__comment_on_build_script__": "echo cd .. is used for going back to project root."
+    "build": "npx node-gyp rebuild && npx tsx index.ts built"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@types/express": "^5.0.3",
-    "@types/node": "^22.17.2",
     "chalk": "^5.6.0",
     "express": "^5.1.0",
     "monaco-editor": "^0.52.2",
@@ -25,5 +23,8 @@
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
     "undici-types": "^7.15.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2"
   }
 }

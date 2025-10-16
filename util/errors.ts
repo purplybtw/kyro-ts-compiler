@@ -23,18 +23,21 @@ export const errorNames = [
 
   // Special main errors
   "ProgramParsingError",
-  "ProgramLexingError"
+  "ProgramLexingError",
+  "ProgramSemanticError"
 ] as const;
 
-const mainErrors: typeof errorNames[number][] = [
+/*const mainErrors: typeof errorNames[number][] = [
   "ProgramParsingError",
-  "ProgramLexingError"
-] as const;
+  "ProgramLexingError",
+  "ProgramSemanticError"
+] as const;*/
 
 function isMainError(err: ErrorResponse | BaseError): boolean {
   switch(err.name) {
       case "ProgramParsingError":
       case "ProgramLexingError":
+      case "ProgramSemanticError":
         return true;
       default:
         return false;

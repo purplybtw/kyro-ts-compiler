@@ -2,7 +2,6 @@ import { BinaryExpression, buildSourceLocation, ExpressionStatement, Node, Numbe
 import KyroInstance from "./main/init";
 import { RunnerArguments } from "./types/kyro";
 import { renderFileInput } from "./util/errors";
-import { requireJvNative } from "./util/native";
 
 function evaluateBinaryExpression(node: BinaryExpression): number {
   const left = evaluateExpression(node.left);

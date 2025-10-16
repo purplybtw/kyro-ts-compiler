@@ -497,7 +497,7 @@
     "prefix": "C:\\Users\\Usuario\\AppData\\Roaming\\npm",
     "npm_version": "10.9.2",
     "node_gyp": "C:\\Program Files\\nodejs\\node_modules\\npm\\node_modules\\node-gyp\\bin\\node-gyp.js",
-    "local_prefix": "C:\\Users\\Usuario\\Documents\\Projects\\javon",
+    "local_prefix": "C:\\Users\\Usuario\\Documents\\Projects\\kyro",
     "init_module": "C:\\Users\\Usuario\\.npm-init.js",
     "global_prefix": "C:\\Users\\Usuario\\AppData\\Roaming\\npm",
     "globalconfig": "C:\\Users\\Usuario\\AppData\\Roaming\\npm\\etc\\npmrc",
