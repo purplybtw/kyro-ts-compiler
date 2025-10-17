@@ -5,10 +5,6 @@ import { Program } from '../ast/nodes';
 export type MemoryType = "variable" | "function" | "class" | "object"
 // no types because they will be classes under the hood
 
-export interface RunnerArguments {
-  builtNative: "skipped" | "built"
-}
-
 export interface ExportedSymbol {
   name: string;
   alias?: string;

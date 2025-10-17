@@ -1,13 +1,16 @@
 {
-  "name": "Kyro Language",
+  "name": "kyro-compiler",
   "version": "1.0.0",
-  "description": "An educational language that mixes the styles of C and Java with TypeScript and Python.",
+  "description": "A TypeScript Compiler for Kyro, an educational language that mixes the styles of C and Java with TypeScript and Python.",
   "main": "index.ts",
   "type": "module",
+  "bin": {
+    "kyro": "./main/cmd/entrypoint.js"
+  },
   "scripts": {
     "kyro": "npx tsx ./index.ts skipped",
     "web": "npx tsx ./web/server.ts",
-    "build": "npx node-gyp rebuild && npx tsx index.ts built"
+    "build": "npx tsx index.ts built"
   },
   "keywords": [],
   "author": "",
@@ -20,11 +23,11 @@
     "node-addon-api": "^8.5.0",
     "node-gyp": "^11.4.2",
     "ts-node": "^10.9.2",
-    "tsx": "^4.20.5",
     "typescript": "^5.9.2",
     "undici-types": "^7.15.0"
   },
   "devDependencies": {
-    "@types/node": "^24.5.2"
+    "@types/node": "^24.5.2",
+    "tsx": "^4.20.6"
   }
 }

@@ -15,7 +15,7 @@
   },
   "include": [
     "**/*.ts"
-  ],
+, "main/cmd.js"  ],
   "exclude": [
     "node_modules",
     "dist"

@@ -1,6 +1,5 @@
 import { BinaryExpression, buildSourceLocation, ExpressionStatement, Node, NumberLiteral } from "./ast/nodes";
 import KyroInstance from "./main/init";
-import { RunnerArguments } from "./types/kyro";
 import { renderFileInput } from "./util/errors";
 
 function evaluateBinaryExpression(node: BinaryExpression): number {
@@ -36,20 +35,12 @@ export function evaluateExpression(node: Node): number {
   throw new Error(`Cannot evaluate node type: ${node.type}`);
 }
 
-//const native = requireJvNative(); // for native c++ modules;
-
 async function main() {  
-  const args = process.argv.slice(2);
-
-  const ky_arguments: RunnerArguments = {
-    builtNative: args[0] as any,
-  }
-
   const jv = new KyroInstance(
     renderFileInput("./tests/test.ky"), 
+    renderFileInput("./tests/test.cky"), 
     "process",
     null, // error/warn handlers not needed -> running in process mode
-    ky_arguments
   );
   
   jv.run();

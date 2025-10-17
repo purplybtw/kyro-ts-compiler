@@ -196,6 +196,8 @@ export class Parser {
       const importToken = this.current;
       this.advance();
 
+      const isNative = this.consumeValue(TokenType.IDENTIFIER, "native");
+
       // typescript thinks current is still the last token so we need to redeclare
       this.current = this.current; 
 
@@ -293,6 +295,7 @@ export class Parser {
 
       return new Nodes.ImportDeclaration(
         this.getSource(importToken),
+        isNative,
         defaultImport,
         namedImports,
         source

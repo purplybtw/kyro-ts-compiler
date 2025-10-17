@@ -7,7 +7,7 @@ default static class MainClass {
     private int result = 0 + null;
     private Parser parser;
 
-    public static operator +(a: int, b: int, c:int): void {
+    public static operator +(a: int): void {
         return a + b;
     }
 
@@ -19,7 +19,7 @@ default static class MainClass {
     public static method(): void {
         print("This is a method!");
     }
-}*/
+}
 
 if(x is any of [2, 5, 3, 7]) {
     print(x+"is in array");

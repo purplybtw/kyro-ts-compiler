@@ -605,6 +605,7 @@ export class ImportDeclaration extends Node {
   type = "ImportDeclaration" as const
   constructor(
     loc: SourceLocation,
+    public isNative: boolean,
     public defaultImport: Identifier | "*" | null,
     public namedImports: ImportSpecifier[],
     public source: StringLiteral

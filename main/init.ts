@@ -3,19 +3,19 @@ import { Parser } from './parser';
 import { visualizeAST } from '../visualizer/ast-visualizer';
 import Errors, { BaseError, FileInput, LocalErrors, renderFileInput } from '../util/errors';
 import Warnings, { LocalWarnings, ListenerCallback } from '../util/warnings';
-import { File, Handlers, InstanceType, RunnerArguments } from "../types/kyro";
+import { File, Handlers, InstanceType } from "../types/kyro";
 import Logger from '../util/logger';
 
-export default class KyroInstance {
+export default class KyroCompiler {
   public errors: LocalErrors;
   public warn: LocalWarnings;
   private files: Map<string, File> = new Map();
   
   constructor(
-    public entrypoint: FileInput, 
+    public entrypoint: FileInput,
+    public output: FileInput, 
     public type: InstanceType, 
-    handlers: Handlers | null = null,
-    public args: RunnerArguments | null = null
+    handlers: Handlers | null = null
   ) {
     if(type === "sandbox") {
       if(handlers === null || typeof handlers.onError != "function")
@@ -38,13 +38,6 @@ export default class KyroInstance {
   }
 
   public run() {
-    if(this.args === null) {
-      this.exec(this.entrypoint);
-      return;
-    } else if(this.args.builtNative === "built") {
-      console.warn("[WARNING] Built native module before running Javon.");
-    }
-    
     this.exec(this.entrypoint);
   }
 
