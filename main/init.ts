@@ -1,10 +1,8 @@
 import { Lexer, TokenType } from './lexer';
 import { Parser } from './parser';
-import { visualizeAST } from '../visualizer/ast-visualizer';
 import Errors, { BaseError, FileInput, LocalErrors, renderFileInput } from '../util/errors';
 import Warnings, { LocalWarnings, ListenerCallback } from '../util/warnings';
 import { File, Handlers, InstanceType } from "../types/kyro";
-import Logger from '../util/logger';
 import { SemanticAnalyzer } from './semantic';
 import readline from 'readline'
 import { NodeTypes } from '../ast/nodes';

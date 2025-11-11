@@ -44,7 +44,8 @@ export enum Structures {
   FINAL = "final",
   ABSTRACT = "abstract",
   THIS = "this",
-  EXPORT = "export"
+  EXPORT = "export",
+  STRUCT = "struct"
 }
 
 export enum Others {

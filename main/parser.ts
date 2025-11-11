@@ -12,6 +12,7 @@ import {
   TypeReferenceKind,
   ImportSpecifier,
   LogicalExpression,
+  TypeReference,
 } from "../ast/nodes";
 import { accessModifiers, allModifiers, immutabilityModifiers, Modifiers } from "../ast/modifiers";
 import { LocalErrors, BaseError, FileInput } from "../util/errors";
@@ -413,10 +414,9 @@ export class Parser {
             return this.parseClassDeclaration(modifiers);
           }
 
-          /*
-          if (current.value === Structures.TYPE) {
-            return this.parseTypeDeclaration();
-          }*/
+          if (current.value === Structures.STRUCT) {
+            return this.parseStructDeclaration();
+          }
 
           if(newCurrent.value === Structures.MATCH) {
             return this.errors.SyntaxError.throw(
@@ -600,6 +600,75 @@ export class Parser {
     }
 
     return new Nodes.BreakStatement(this.getSource(first));
+  }
+
+  private parseStructDeclaration(): ParseResult<
+    NodeTypes["StructDeclaration"]
+  > {
+
+    if(!this.consumeValue(TokenType.KEYWORD, Structures.STRUCT)) {
+      this.errors.SyntaxError.throw(
+        "Expected 'struct' keyword",
+        this.file,
+        this.getSource()
+      )
+    }
+
+    const identifier = this.parseIdentifier();
+    if(identifier instanceof BaseError) return identifier;
+
+    /*
+    
+    struct myStruct {
+      int a = 25,
+
+    }
+
+    */
+
+    const fields: {identifier: NodeTypes["Identifier"], type: NodeTypes["TypeReference"] | NodeTypes["ArrayType"], initializer?: Node}[] = [];
+
+    if(!this.consume(TokenType.LBRACE)) {
+      this.errors.SyntaxError.throw(
+        "Expected '{'",
+        this.file,
+        this.getSource()
+      )
+    }
+
+    while(this.current.type != TokenType.RBRACE && this.withinBounds()) {
+      const vtype = this.parseTypeReference(TypeReferenceKind.ANY, true);
+      if(vtype instanceof BaseError) return vtype;
+
+      const videntifier = this.parseIdentifier();
+      if(videntifier instanceof BaseError) return videntifier;
+      
+      let initializer: Node | undefined = undefined;
+
+      if(this.consume(TokenType.ASSIGNMENT)) {
+        const expr = this.parseExpression();
+        if (expr instanceof BaseError) return expr;
+        initializer = expr;
+      }
+
+      if(!this.consume(TokenType.COMMA)) break;
+
+      fields.push({type: vtype, identifier: videntifier, initializer})
+    }
+
+    if(!this.consume(TokenType.RBRACE)) {
+      this.errors.SyntaxError.throw(
+        "Expected '}'",
+        this.file,
+        this.getSource()
+      )
+    }
+
+    return new Nodes.StructDeclaration(
+      this.getSource(),
+      identifier,
+      fields
+    );
   }
 
   private parseContinueStatement(): ParseResult<
@@ -1835,7 +1904,7 @@ export class Parser {
   }
 
   private parseGenerics(): ParseResult<NodeTypes["TypeReference"][]> {
-    const generics: NodeTypes["TypeReference"][] = [];
+    const generics: (NodeTypes["TypeReference"] | NodeTypes["ArrayType"])[] = [];
     if (!this.consumeValue(TokenType.COMPARISON, "<")) {
       return [];
     }
@@ -1866,7 +1935,7 @@ export class Parser {
       generics[0].loc || this.getSource()
     )
 
-    return generics;
+    //return generics;
   }
 
   private parseTypeReference(
@@ -1930,24 +1999,21 @@ export class Parser {
       );
     }
 
-    if (
-      this.current.type === TokenType.LBRACKET &&
-      this.next()?.type === TokenType.RBRACKET
-    ) {
-      if (!allowArrays) {
-        return this.errors.SyntaxError.throw(
-          `Expected non-array type`,
-          this.file,
-          this.getSource(current),
-        );
+    if(allowArrays) {
+      let finalType: NodeTypes["TypeReference"] | NodeTypes["ArrayType"] = baseType;
+
+      while (
+        this.current.type === TokenType.LBRACKET &&
+        this.next()?.type === TokenType.RBRACKET
+      ) {
+        this.advance(); // [
+        this.advance(); // ]
+        finalType = new Nodes.ArrayType(this.getSource(current), finalType);
       }
 
-      this.advance();
-      this.advance();
-
-      return new Nodes.ArrayType(this.getSource(current), baseType);
+      return finalType;
     }
-
+    
     return baseType;
   }
 

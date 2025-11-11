@@ -1,5 +1,3 @@
-// main/config/symbols.ts
-
 import type { BaseType } from "./types";
 import type * as Nodes from "../../ast/nodes";
 

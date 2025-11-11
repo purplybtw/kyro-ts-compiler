@@ -30,3 +30,10 @@ const int[] array = [];
 if(x is none of array) {
     print(x+"isn't in array");
 }
+
+struct myStruct {
+    int a = 235_235_235,
+    int b = 4,
+    MyObject obj = new MyObject(),
+    int[][] matrix = [2, 3, 4]
+}

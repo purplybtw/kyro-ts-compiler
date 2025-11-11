@@ -1,8 +1,4 @@
-// main/config/types.ts
-
 export type TypeKind = 'primitive' | 'class' | 'object' | 'special' | 'logical' | 'function';
-
-// Abstract base class
 export abstract class BaseType {
   abstract readonly kind: TypeKind;
   abstract readonly id?: string;
@@ -13,7 +9,6 @@ export abstract class BaseType {
   abstract equals(other: BaseType): boolean;
 }
 
-// Primitive types
 export class IntType extends BaseType {
   readonly kind = 'primitive';
   readonly id = 'int';
@@ -104,8 +99,6 @@ export class NaNType extends BaseType {
     return other instanceof NaNType;
   }
 }
-
-// Reference/complex types
 export class ArrayType extends BaseType {
   readonly kind = 'object';
   readonly id = 'array';
@@ -129,7 +122,6 @@ export class StructType extends BaseType {
   equals(other: BaseType): boolean {
     if (!(other instanceof StructType)) return false;
     if (this.generics.length !== other.generics.length) return false;
-    // Simplified: actual field-by-field comparison could be added
     return true;
   }
 }
@@ -166,8 +158,6 @@ export class FunctionType extends BaseType {
     );
   }
 }
-
-// Type logic
 export class TypeUnion extends BaseType {
   readonly kind = 'logical';
   readonly id = 'union';
@@ -216,7 +206,6 @@ export const TypeClasses = {
   intersection: TypeIntersection
 } as const;
 
-// Registry and type-indexed reference for import
 export const Types = {
   int: new IntType(),
   float: new FloatType(),
@@ -229,5 +218,4 @@ export const Types = {
   NaN: new NaNType(),
 } as const;
 
-// Helper mapped type to statically reference all types, e.g. Types["int"]
 export type TypesMap = typeof Types;

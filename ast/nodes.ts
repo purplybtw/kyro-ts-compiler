@@ -30,7 +30,7 @@ export abstract class Visitor<T> implements BaseVisitor<T> {
         case "BreakStatement": return this.visitBreakStatement(node as BreakStatement);
         case "ContinueStatement": return this.visitContinueStatement(node as ContinueStatement);
         case "FunctionDeclaration": return this.visitFunctionDeclaration(node as FunctionDeclaration);
-        case "TypeDeclaration": return this.visitTypeDeclaration(node as TypeDeclaration);
+        case "StructDeclaration": return this.visitStructDeclaration(node as StructDeclaration);
         case "Parameter": return this.visitParameter(node as Parameter);
         case "TypeReference": return this.visitTypeReference(node as TypeReference);
         case "ArrayType": return this.visitArrayType(node as ArrayType);
@@ -117,7 +117,7 @@ export abstract class Visitor<T> implements BaseVisitor<T> {
   visitBreakStatement(node: BreakStatement): T { return this.default(node); }
   visitContinueStatement(node: ContinueStatement): T { return this.default(node); }
   visitFunctionDeclaration(node: FunctionDeclaration): T { return this.default(node); }
-  visitTypeDeclaration(node: TypeDeclaration): T { return this.default(node); }
+  visitStructDeclaration(node: StructDeclaration): T { return this.default(node); }
   visitParameter(node: Parameter): T { return this.default(node); }
   visitTypeReference(node: TypeReference): T { return this.default(node); }
   visitArrayType(node: ArrayType): T { return this.default(node); }
@@ -187,7 +187,7 @@ export interface BaseVisitor<T> {
   visitBreakStatement(node: BreakStatement): T
   visitContinueStatement(node: ContinueStatement): T
   visitFunctionDeclaration(node: FunctionDeclaration): T
-  visitTypeDeclaration(node: TypeDeclaration): T
+  visitStructDeclaration(node: StructDeclaration): T
   visitParameter(node: Parameter): T
   visitTypeReference(node: TypeReference): T
   visitArrayType(node: ArrayType): T
@@ -536,13 +536,13 @@ export class FunctionDeclaration extends Node {
   }
 }
 
-export class TypeDeclaration extends Node {
-  type = "TypeDeclaration" as const
-  constructor(loc: SourceLocation, public identifier: Identifier, public fields: {identifier: Identifier, varType: TypeReference}[]) {
+export class StructDeclaration extends Node {
+  type = "StructDeclaration" as const
+  constructor(loc: SourceLocation, public identifier: Identifier, public fields: {identifier: Identifier, type: TypeReference | ArrayType, initializer?: Node}[]) {
     super(loc)
   }
   accept<T>(visitor: BaseVisitor<T>): T {
-    return visitor.visitTypeDeclaration(this)
+    return visitor.visitStructDeclaration(this)
   }
 }
 
@@ -638,7 +638,7 @@ export class TypeReference extends Node {
 
 export class ArrayType extends Node {
   type = "ArrayType" as const
-  constructor(loc: SourceLocation, public elementType: TypeReference) {
+  constructor(loc: SourceLocation, public elementType: TypeReference | ArrayType) {
     super(loc)
   }
   accept<T>(visitor: BaseVisitor<T>): T {
@@ -1028,7 +1028,7 @@ export const Nodes = {
   BreakStatement,
   ContinueStatement,
   FunctionDeclaration,
-  TypeDeclaration,
+  StructDeclaration,
   Parameter,
   TypeReference,
   ArrayType,
