@@ -7,147 +7,14 @@ import { SemanticVisitors } from "../ast/visitors";
 import { MainConfig } from "../types/global";
 import { Modifiers } from "../ast/modifiers";
 import { OperatorType } from "../types/operators";
-
-/* -------------------------
-   Type and symbol model
-   ------------------------- */
-
-export type TypeKind = 
-  "primitive" | "class" | "object" | "special" | "logical";
-
-/* Base type interface */
-export interface BaseType {
-  readonly kind: TypeKind;
-  readonly id: string;         // e.g., "number", "array", "MyClass"
-  readonly metadata: {};
-}
-
-/* Primitive types */
-export interface IntType extends BaseType {
-  readonly kind: "primitive";
-  readonly id: "int";
-  readonly metadata: {
-    value?: number
-  };
-}
-
-export interface StringLiteralType extends BaseType {
-  readonly kind: "primitive";
-  readonly id: "string";
-  readonly metadata: {
-    value?: string
-  };
-}
-
-export interface FloatType extends BaseType {
-  readonly kind: "primitive";
-  readonly id: "float";
-  readonly metadata: {
-    value?: number
-  };
-}
-
-export interface BooleanType extends BaseType {
-  readonly kind: "primitive";
-  readonly id: "boolean";
-  readonly metadata: {
-    value?: boolean
-  };
-}
-
-/* Reference types */
-export interface ArrayType extends BaseType {
-  readonly kind: "object";
-  readonly id: "array";
-  readonly metadata: { elementType: BaseType };
-}
-
-export interface StructType extends BaseType {
-  readonly kind: "object";
-  readonly id: "struct";
-  readonly metadata: { 
-    elementTypes: Map<string, BaseType>,
-    generics: BaseType[]
-  };
-}
-
-export interface ClassType extends BaseType {
-  readonly kind: "class";
-  readonly metadata: { 
-    extending?: ClassType,
-    implementing?: StructType,
-    generics?: BaseType[]
-  };
-}
-
-export interface FunctionType extends BaseType {
-  readonly kind: "object";
-  readonly id: "function";
-  readonly metadata: {
-    params: BaseType[],
-    returnType: BaseType,
-    generics: BaseType[]
-  };
-}
-
-/* Type unions and intersections */
-export interface TypeUnion {
-  readonly kind: "logical";
-  readonly left: BaseType;
-  readonly right: BaseType;
-}
-
-export interface TypeIntersection {
-  readonly kind: "logical";
-  readonly left: BaseType;
-  readonly right: BaseType;
-}
-
-/* Union type of all types for the analyzer */
-export type Type =
-  | IntType
-  | FloatType
-  | BooleanType
-  | ArrayType
-  | StructType
-  | ClassType
-  | FunctionType
-  | TypeUnion
-  | TypeIntersection
-  | StringLiteralType;
-
-export type SymbolKind = "variable" | "parameter" | "function" | "class" | "type";
-
-export interface SymbolEntryBase {
-  readonly name: string;
-  readonly kind: SymbolKind;
-  readonly type: Type;
-  readonly isConstant: boolean;
-  readonly isInitialized: boolean;
-  readonly loc: Nodes.SourceLocation | undefined;
-  readonly node: Nodes.Node | undefined;
-}
-
-export interface VariableSymbol extends SymbolEntryBase {
-  readonly kind: "variable" | "parameter";
-  readonly isCaptured?: boolean;
-}
-
-export interface FunctionSymbol extends SymbolEntryBase {
-  readonly kind: "function";
-  readonly params: ReadonlyArray<{ readonly name: string; readonly type: Type | null; readonly loc?: Nodes.Node["loc"] }>;
-  readonly returnType: Type | null;
-  readonly isAsync?: boolean;
-}
-
-export interface ClassSymbol extends SymbolEntryBase {
-  readonly kind: "class";
-  readonly fields: ReadonlyMap<string, VariableSymbol>;
-  readonly methods: ReadonlyMap<string, FunctionSymbol>;
-  readonly superClass?: string | null;
-}
-
-export type SymbolEntry = VariableSymbol | FunctionSymbol | ClassSymbol | SymbolEntryBase;
+import { Types, TypesMap, BaseType, TypeClasses } from "./config/types";
+import { SymbolEntry, VariableSymbol, FunctionSymbol, ClassSymbol } from "./config/symbols";
+import NativeConfig from "./config/native";
+import type { SwitchProperty } from "../util/any";
+import path from 'path';
+import fs from 'fs';
+import KyroCompiler from './init';
+import { renderFileInput } from '../util/errors';
 
 /* -------------------------
    Scope (symbol table)
@@ -200,6 +67,9 @@ export interface AnalysisState {
   insideSwitch: number;
 }
 
+type NativeModule = keyof typeof NativeConfig;
+type NativeModuleSymbol = (typeof NativeConfig)[NativeModule]
+
 interface Feedback {
     errors: BaseError[],
     warnings: BaseWarning[]
@@ -210,22 +80,43 @@ interface Feedback {
    ------------------------- */
 
 export class SemanticAnalyzer {
-  private readonly program: NodeTypes["Program"];
+  private readonly ast: NodeTypes["Program"];
   private readonly globalScope: Scope;
-  private readonly types = new Map<TypeId, Type>();
   private readonly warns: MainConfig["warn"];
   private readonly errors: MainConfig["errors"];
   private readonly file: MainConfig["file"];
   private state: AnalysisState;
   private visitors = SemanticVisitors;
   private hasErrors = false;
+  private static processingFiles: Set<string> = new Set();
+  private static fileExportsCache: Map<string, Map<string, SymbolEntry>> = new Map();
 
-  public constructor(program: NodeTypes["Program"], config: MainConfig) {
+  private reportTypeError(message: string, loc: Nodes.SourceLocation): BaseError {
+    this.hasErrors = true;
+    return this.errors.TypeError.throw(
+      message,
+      this.file,
+      loc,
+    );
+  }
+
+  private reportCriticalTypeError(
+    message: string,
+    loc: Nodes.SourceLocation = Nodes.buildSourceLocation(0,0,0)
+  ): BaseError {
+    this.hasErrors = true;
+    return this.errors.ProgramSemanticError.throw(
+      message,
+      this.file,
+      loc,
+    );
+  }
+
+  public constructor(ast: NodeTypes["Program"], config: MainConfig) {
     this.warns = config.warn;
     this.errors = config.errors;
     this.file = config.file;
-
-    this.program = program;
+    this.ast = ast;
     this.globalScope = new Scope(null);
     this.state = {
       currentFunction: null,
@@ -234,61 +125,242 @@ export class SemanticAnalyzer {
       insideLoop: 0,
       insideSwitch: 0,
     };
-
-    this.bootstrapBuiltinTypes();
-    this.bootstrapBuiltinSymbols();
+    this.bootstrapImports(ast.imports);
   }
 
   public analyze(): void | BaseError {
     // start
-    if(this.hasErrors) {
-      return this.errors.ProgramParsingError.throw(
+    if (this.hasErrors) {
+      return this.reportCriticalTypeError(
         "Failed to parse program",
-        this.file,
         Nodes.buildSourceLocation(0, 0, 0),
       );
     }
   }
 
-  /* -------------------------
-     bootstrapping helpers
-     ------------------------- */
-
-  private bootstrapBuiltinTypes(): void {
-    this.registerType({ kind: "primitive", id: "int" });
-    this.registerType({ id: "float", displayName: "float" });
-    this.registerType({ id: "bool", displayName: "bool" });
-    this.registerType({ id: "char", displayName: "char" });
-    this.registerType({ id: "void", displayName: "void" });
-    this.registerType({ id: "undefined", displayName: "undefined" });
-    this.registerType({ id: "null", displayName: "null" });
-    this.registerType({ id: "NaN", displayName: "NaN" });
+  private bootstrapImports(imports: Nodes.ImportDeclaration[]): void {
+    for (const imp of imports) {
+      if(imp.isNative) {
+        this.bootstrapNativeImport(imp);
+      } else {
+        this.bootstrapFileImport(imp);
+      }
+    }
+    console.log(this.globalScope)
   }
 
-  private bootstrapBuiltinSymbols(): void {
-    const printFn: FunctionSymbol = {
-      name: "print",
-      kind: "function",
-      type: null,
-      params: [{ name: "v", type: this.getType("string"), loc: undefined }],
-      returnType: this.getType("void"),
-      isAsync: false,
-      loc: undefined,
-      node: undefined,
+  private bootstrapFileImport(_import: NodeTypes["ImportDeclaration"]): void {
+    if(_import.isNative) {
+      this.reportCriticalTypeError(
+        `Module '${_import.source.value}' attempted to bootstrap as dynamic while being a native import`
+      );
+      return;
+    }
+
+    const importedPath = _import.source.value;
+    const currentDir = path.dirname(this.file.path);
+    const resolvedPath = path.resolve(currentDir, importedPath);
+    const normalizedPath = path.normalize(resolvedPath);
+
+    if (SemanticAnalyzer.processingFiles.has(normalizedPath)) {
+      const importChain = Array.from(SemanticAnalyzer.processingFiles);
+      importChain.push(this.file.path);
+      importChain.push(normalizedPath);
+      this.reportCriticalTypeError(
+        `Circular import detected: ${importChain.join(' → ')}`
+      );
+      return;
+    }
+
+    if (!fs.existsSync(normalizedPath)) {
+      this.reportTypeError(
+        `File '${importedPath}' not found`,
+        _import.source.loc
+      );
+      return;
+    }
+
+    let exportedSymbols: Map<string, SymbolEntry> | null = null;
+    let importedAst: NodeTypes["Program"] | null = null;
+    
+    if (SemanticAnalyzer.fileExportsCache.has(normalizedPath)) {
+      exportedSymbols = SemanticAnalyzer.fileExportsCache.get(normalizedPath)!;
+      const importedFileInput = renderFileInput(normalizedPath);
+      const parsedAst = KyroCompiler.parseFile(
+        importedFileInput,
+        this.errors,
+        this.warns
+      );
+      if (!(parsedAst instanceof BaseError)) {
+        importedAst = parsedAst;
+      }
+    } else {
+      SemanticAnalyzer.processingFiles.add(normalizedPath);
+      try {
+        const importedFileInput = renderFileInput(normalizedPath);
+        const parsedAst = KyroCompiler.parseFile(
+          importedFileInput,
+          this.errors,
+          this.warns
+        );
+        
+        if (parsedAst instanceof BaseError) {
+          this.reportTypeError(
+            `Failed to parse imported file '${importedPath}'`,
+            _import.source.loc
+          );
+          return;
+        }
+
+        importedAst = parsedAst;
+
+        const importedSemantics = new SemanticAnalyzer(
+          importedAst,
+          { errors: this.errors, warn: this.warns, file: importedFileInput }
+        );
+
+        const analysisResult = importedSemantics.analyze();
+        if (analysisResult instanceof BaseError) {
+          this.reportTypeError(
+            `Failed to analyze imported file '${importedPath}'`,
+            _import.source.loc
+          );
+          return;
+        }
+
+        exportedSymbols = this.extractExportedSymbols(importedSemantics, importedAst);
+        SemanticAnalyzer.fileExportsCache.set(normalizedPath, exportedSymbols);
+      } finally {
+        SemanticAnalyzer.processingFiles.delete(normalizedPath);
+      }
+    }
+
+    if (!exportedSymbols || !importedAst) {
+      return;
+    }
+
+    const { defaultMemberPtr } = importedAst.metadata;
+    const imp = Object.fromEntries(exportedSymbols);
+
+    if(_import.defaultImport === "*") {
+      for(const defImport of Object.values(imp)) {
+        this.globalScope.define(defImport);
+      }
+    } else if (_import.defaultImport != null) {
+      if (defaultMemberPtr !== undefined && defaultMemberPtr < importedAst.body.length) {
+        const defaultStatement = importedAst.body[defaultMemberPtr];
+        const defaultSymbol = this.extractSymbolFromStatement(defaultStatement);
+        
+        if (defaultSymbol) {
+          const symbol = Array.isArray(defaultSymbol) ? defaultSymbol[0] : defaultSymbol;
+          const localName = _import.defaultImport.name;
+          const defaultImportSymbol: SymbolEntry = {
+            ...symbol,
+            name: localName,
+          };
+          this.globalScope.define(defaultImportSymbol);
+        } else {
+          this.reportTypeError(
+            `Default export not found in module '${importedPath}'`,
+            _import.source.loc
+          );
+        }
+      } else {
+        this.reportTypeError(
+          `No default export found in module '${importedPath}'`,
+          _import.source.loc
+        );
+      }
+    }
+
+    for(const namedImport of _import.namedImports) {
+      const key = namedImport.importedName.name;
+      if (key in imp) {
+        const importRef = (imp as Record<string, SymbolEntry>)[key];
+        const symbolCopy = { ...importRef };
+        if(namedImport.localName != null) {
+          (symbolCopy as any).name = namedImport.localName.name;
+          this.globalScope.define(symbolCopy as SymbolEntry);
+        } else {
+          this.globalScope.define(importRef);
+        }
+      } else {
+        this.reportTypeError(
+          `Exported symbol '${key}' not found in module '${importedPath}'`,
+          namedImport.importedName.loc
+        );
+      }
+    }
+  }
+  private bootstrapNativeImport(_import: NodeTypes["ImportDeclaration"]): void {
+    if(!_import.isNative) {
+      this.reportCriticalTypeError(
+        `Module '${_import.source.value}' attempted to bootstrap as native while being a dynamic import`
+      );
+      return
     };
-    this.globalScope.define(printFn);
-  }
 
-  /* -------------------------
-     type registry helpers
-     ------------------------- */
+    const src = _import.source.value as NativeModule;
+    const imp = NativeConfig[src];
 
-  public registerType(t: Type): void {
-    this.types.set(t.id, t);
-  }
+    if (!imp) {
+      this.reportTypeError(
+        `Native module '${src}' not found`,
+        _import.source.loc
+      );
+      return;
+    }
 
-  public getType(id: TypeId): Type | null {
-    return this.types.get(id) ?? null;
+    if(_import.defaultImport === "*") {
+      for(const defImport of Object.values(imp)) {
+        this.globalScope.define(defImport);
+      }
+    } else if (_import.defaultImport != null) {
+      // build struct type with all symbols from the native module
+      const structFields = new Map<string, BaseType>();
+      
+      for (const [key, symbol] of Object.entries(imp)) {
+        structFields.set(key, symbol.type);
+      }
+      
+      const structType = new TypeClasses.struct(structFields);
+      
+      const localName = _import.defaultImport.name;
+      
+      // Create a variable symbol representing the struct
+      const defaultImportSymbol: VariableSymbol = {
+        name: localName,
+        kind: "variable",
+        type: structType,
+        loc: _import.loc,
+        node: _import,
+        isInitialized: true,
+        isConstant: true,
+        modifiers: 0,
+      };
+      
+      this.globalScope.define(defaultImportSymbol);
+    }
+
+    for(const namedImport of _import.namedImports) {
+      const key = namedImport.importedName.name;
+      if (key in imp) {
+        const importRef = (imp as Record<string, SymbolEntry>)[key];
+        if(namedImport.localName != null) {
+          (importRef as any).name = namedImport.localName.name;
+          this.globalScope.define(importRef);
+        } else {
+          this.globalScope.define(importRef);
+        }
+      }
+    }
+
+/*
+    const nativeSymbols = Object.values(NativeConfig[imp]);
+
+    for (const sym of nativeSymbols) {
+      this.globalScope.define(sym);
+    }*/
   }
 
   /* -------------------------
@@ -310,10 +382,9 @@ export class SemanticAnalyzer {
 
   public declareVariable(sym: VariableSymbol): boolean {
     if (this.state.currentScope.hasLocal(sym.name)) {
-      this.errors.TypeError.throw(
+      this.reportTypeError(
         `Duplicate declaration of '${sym.name}'`, 
-        this.file,
-        sym.loc
+        sym.loc || Nodes.buildSourceLocation(0,0,0)
       );
       return false;
     }
@@ -323,9 +394,8 @@ export class SemanticAnalyzer {
 
   public declareFunction(sym: FunctionSymbol): boolean {
     if (this.state.currentScope.hasLocal(sym.name)) {
-      this.errors.TypeError.throw(
+      this.reportTypeError(
         `Duplicate declaration of '${sym.name}'`, 
-        this.file,
         sym.loc || Nodes.buildSourceLocation(0,0,0)
       );
       return false;
@@ -336,7 +406,10 @@ export class SemanticAnalyzer {
 
   public declareClass(sym: ClassSymbol): boolean {
     if (this.state.currentScope.hasLocal(sym.name)) {
-      new BaseError(`Duplicate declaration of class '${sym.name}'`, sym.loc));
+      this.reportTypeError(
+        `Duplicate declaration of class '${sym.name}'`, 
+        sym.loc || Nodes.buildSourceLocation(0,0,0)
+      );
       return false;
     }
     this.state.currentScope.define(sym);
@@ -358,9 +431,11 @@ export class SemanticAnalyzer {
       const vs: VariableSymbol = {
         name: p.name,
         kind: "parameter",
-        type: p.type,
+        type: p.type || Types.void,
         loc: p.loc,
         node: undefined,
+        isConstant: false,
+        modifiers: 0,
         isInitialized: true,
       };
       this.declareVariable(vs);
@@ -386,6 +461,170 @@ export class SemanticAnalyzer {
   public popClassContext(): void {
     this.exitScope();
     this.state.currentClass = null;
+  }
+
+  public getGlobalScope(): Scope {
+    return this.globalScope;
+  }
+
+  private extractExportedSymbols(
+    importedSemantics: SemanticAnalyzer,
+    importedAst: NodeTypes["Program"]
+  ): Map<string, SymbolEntry> {
+    const exportedSymbols = new Map<string, SymbolEntry>();
+    const { exportMembersPtr } = importedAst.metadata;
+
+    exportMembersPtr.forEach(index => {
+      if (index < 0 || index >= importedAst.body.length) {
+        return;
+      }
+
+      const statement = importedAst.body[index];
+      const symbol = this.extractSymbolFromStatement(statement);
+      
+      if (symbol) {
+        if (Array.isArray(symbol)) {
+          symbol.forEach(s => exportedSymbols.set(s.name, s));
+        } else {
+          exportedSymbols.set(symbol.name, symbol);
+        }
+      }
+    });
+
+    return exportedSymbols;
+  }
+
+  private extractSymbolFromStatement(statement: NodeTypes["FunctionDeclaration"] | NodeTypes["ClassDeclaration"] | NodeTypes["VariableDeclaration"] | NodeTypes["Program"]["body"][number]): SymbolEntry | SymbolEntry[] | null {
+    if (statement.type === "FunctionDeclaration") {
+      const fn = statement as NodeTypes["FunctionDeclaration"];
+      const returnType = this.resolveTypeReference(fn.returnType) || Types.void;
+      const functionSymbol: FunctionSymbol = {
+        name: fn.identifier.name,
+        kind: "function",
+        params: fn.parameters.map(p => ({
+          name: p.identifier.name,
+          type: this.resolveTypeReference(p.paramType) || Types.void,
+          loc: p.loc
+        })),
+        modifiers: 0,
+        loc: fn.loc,
+        node: fn,
+        isAsync: false,
+        type: new TypeClasses.function(
+          fn.parameters.map(p => this.resolveTypeReference(p.paramType) || Types.void),
+          returnType,
+          []
+        )
+      };
+      return functionSymbol;
+    } else if (statement.type === "ClassDeclaration") {
+      const cls = statement as NodeTypes["ClassDeclaration"];
+      const fields = new Map<string, VariableSymbol>();
+      const methods = new Map<string, FunctionSymbol>();
+      
+      for (const prop of cls.properties) {
+        const fieldSymbol: VariableSymbol = {
+          name: prop.identifier.name,
+          kind: "variable",
+          type: this.resolveTypeReference(prop.varType) || Types.void,
+          loc: prop.loc,
+          node: prop,
+          isInitialized: prop.initializer != null,
+          isConstant: false,
+          modifiers: (prop.modifiers as any)?.getNumberValue?.() ?? 0
+        };
+        fields.set(prop.identifier.name, fieldSymbol);
+      }
+      
+      for (const method of cls.methods) {
+        const methodReturnType = this.resolveTypeReference(method.returnType) || Types.void;
+        const methodSymbol: FunctionSymbol = {
+          name: method.identifier.name,
+          kind: "function",
+          params: method.parameters.map(p => ({
+            name: p.identifier.name,
+            type: this.resolveTypeReference(p.paramType) || Types.void,
+            loc: p.loc
+          })),
+          modifiers: (method.modifiers as any)?.getNumberValue?.() ?? 0,
+          loc: method.loc,
+          node: method,
+          isAsync: false,
+          type: new TypeClasses.function(
+            method.parameters.map(p => this.resolveTypeReference(p.paramType) || Types.void),
+            methodReturnType,
+            []
+          )
+        };
+        methods.set(method.identifier.name, methodSymbol);
+      }
+      
+      const classSymbol: ClassSymbol = {
+        name: cls.identifier.name,
+        kind: "class",
+        fields: fields,
+        methods: methods,
+        superClass: cls.extending?.name || null,
+        modifiers: (cls.modifiers as any)?.getNumberValue?.() ?? 0,
+        loc: cls.loc,
+        node: cls,
+        type: new TypeClasses.class(cls.identifier.name, {
+          extending: cls.extending ? new TypeClasses.class(cls.extending.name, {}) : undefined
+        })
+      };
+      return classSymbol;
+    } else if (statement.type === "VariableDeclaration") {
+      const varDecl = statement as NodeTypes["VariableDeclaration"];
+      const symbols: VariableSymbol[] = [];
+      for (const identifier of varDecl.identifiers) {
+        const variableSymbol: VariableSymbol = {
+          name: identifier.name,
+          kind: "variable",
+          type: this.resolveTypeReference(varDecl.varType) || Types.void,
+          loc: identifier.loc,
+          node: varDecl,
+          isInitialized: varDecl.initializer != null,
+          isConstant: varDecl.isConstant,
+          modifiers: 0
+        };
+        symbols.push(variableSymbol);
+      }
+      return symbols;
+    }
+
+    return null;
+  }
+
+  private resolveTypeReference(
+    typeNode: NodeTypes["TypeReference"] | NodeTypes["ArrayType"] | NodeTypes["VoidType"] | NodeTypes["NullLiteral"] | NodeTypes["UndefinedLiteral"] | NodeTypes["InferType"]
+  ): BaseType | null {
+    if (!typeNode) return null;
+    
+    if (typeNode.type === "TypeReference") {
+      const typeRef = typeNode as NodeTypes["TypeReference"];
+      const typeName = typeRef.name;
+      if (typeName === "int") return Types.int;
+      if (typeName === "float") return Types.float;
+      if (typeName === "bool" || typeName === "boolean") return Types.boolean;
+      if (typeName === "string") return Types.string;
+      if (typeName === "char") return Types.char;
+      if (typeName === "void") return Types.void;
+      return new TypeClasses.class(typeName, {});
+    } else if (typeNode.type === "ArrayType") {
+      const arrayType = typeNode as NodeTypes["ArrayType"];
+      const elementType = this.resolveTypeReference(arrayType.elementType);
+      if (elementType) {
+        return new TypeClasses.array(elementType);
+      }
+    } else if (typeNode.type === "VoidType") {
+      return Types.void;
+    } else if (typeNode.type === "NullLiteral") {
+      return Types.null;
+    } else if (typeNode.type === "UndefinedLiteral") {
+      return Types.undefined;
+    }
+    
+    return null;
   }
 
 }

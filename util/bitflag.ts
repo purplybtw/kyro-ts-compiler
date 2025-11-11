@@ -148,6 +148,20 @@ export class BitFlag<T extends string = string> {
     return this.value as number;
   }
 
+  getNumberValueOf(flags: T[]): number {
+    if (this.useBigInt) throw new Error("Cannot get number value from big int flag");
+    let combined = 0;
+    for (const flag of flags) {
+      const flagValue = this.flags.get(flag);
+      if (typeof flagValue === "number") {
+        combined |= flagValue;
+      } else if (typeof flagValue === "bigint") {
+        throw new Error("Cannot get number value from big int flag");
+      }
+    }
+    return combined;
+  }
+
   getBigIntValue(): bigint {
     if(!this.useBigInt) throw new Error("Cannot get big int value from number flag");
     return this.value as bigint;

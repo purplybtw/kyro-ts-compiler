@@ -1,7 +1,7 @@
 import path from "path";
 import fs from "fs";
 import { renderFileInput } from "../../util/errors";
-import config from "../config";
+import config from "../config/config";
 import KyroCompiler from "../init";
 
 const args = process.argv.slice(2);
@@ -12,12 +12,15 @@ if (args.length === 0) {
 
 const file = args[0];
 let outputPath: undefined | string;
+let logProcess: boolean = false;;
 
 for (let i = 1; i < args.length; i++) {
     if (args[i] === "--out" && args[i + 1]) {
         outputPath = args[i + 1];
         i++;
     }
+
+    if(args[i] === "--log") logProcess = true;
 }
 
 const cwd = process.cwd();
@@ -65,7 +68,7 @@ if (outIsDir) {
 
 const baseName = path.basename(inputPath, "." + config.file_ext);
 const finalOut = outIsDir
-    ? path.join(outPath, baseName + ".cky")
+    ? path.join(outPath, baseName + config.c_file_ext)
     : outPath;
 
 const kyro = new KyroCompiler(
@@ -75,4 +78,4 @@ const kyro = new KyroCompiler(
     null
 );
 
-kyro.run();
+kyro.run(true);

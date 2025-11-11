@@ -1,0 +1,16 @@
+default func add(int a, int b) {
+  return a + b;
+}
+
+export func subtract(int a, int b) {
+  return a - b;
+}
+
+export func div(int a, int b) {
+  return a / b;
+}
+
+export func multiply(int a, int b) {
+  return a * b;
+}
+

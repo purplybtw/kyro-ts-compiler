@@ -42,6 +42,9 @@ export class Parser {
   private recursionDepth = 0;
   private maxRecursionDepth = 1000;
   private current: Token = this.tokens[0];
+  private defaultExport: number | undefined = undefined;
+  private exportMembers: number[] = [];
+  private programBodyPtr: number = 0;
 
   constructor(c: MainConfig) {
     this.errors = c.errors;
@@ -91,6 +94,7 @@ export class Parser {
     this.current = this.tokens[0];
     const body: Node[] = [];
     let hasErrors = false;
+    const imports: NodeTypes["ImportDeclaration"][] = [];
 
     while (this.current && this.current.type != TokenType.EOF) {
       const statement = this.parseInitialStatement();
@@ -108,11 +112,14 @@ export class Parser {
 
       if (statement === null) break;
 
-      body.push(statement);
+      switch(statement.type) {
+        case "ImportDeclaration": imports.push(statement as NodeTypes["ImportDeclaration"]); break;
+        default: body.push(statement);
+      }
     }
 
     while (this.current && this.current.type != TokenType.EOF) {
-      const statement = this.parseStatement();
+      const statement = this.parseStatement(true);
 
       if (statement instanceof BaseError) {
         hasErrors = true;
@@ -128,6 +135,7 @@ export class Parser {
       if (statement === null) break;
 
       body.push(statement);
+      this.programBodyPtr++;
     }
 
     if (hasErrors)
@@ -137,7 +145,10 @@ export class Parser {
         buildSourceLocation(0, 0, 0),
       );
 
-    return new Program(buildSourceLocation(0, 1, 1), body);
+    return new Program(buildSourceLocation(0, 1, 1), body, imports, {
+      defaultMemberPtr: this.defaultExport,
+      exportMembersPtr: this.exportMembers
+    });
   }
 
   private synchronize(): void {
@@ -305,7 +316,7 @@ export class Parser {
     return null;
   }
 
-  private parseStatement(): ParseResult<Node> | null {
+  private parseStatement(isTopLevel: boolean = false): ParseResult<Node> | null {
     while (
       this.current &&
       this.current.type != TokenType.UNKNOWN &&
@@ -373,11 +384,24 @@ export class Parser {
 
           // Modifiers
 
-          const modifiers = this.parseModifiers(allModifiers);
+          const modifiers = this.parseModifiers(allModifiers, isTopLevel);
 
           if(modifiers instanceof BaseError) return modifiers;
 
           const newCurrent = this.current;
+
+          if(modifiers.has("DEFAULT")) {
+            if(this.defaultExport != undefined) {
+              return this.errors.SyntaxError.throw(
+                "Only one default export is allowed",
+                this.file,
+                this.getSource(newCurrent)
+              )
+            }
+            this.defaultExport = this.programBodyPtr;
+          } else if(modifiers.has("EXPORT")) {
+            this.exportMembers.push(this.programBodyPtr);
+          }
 
           // Structures
 
@@ -394,7 +418,7 @@ export class Parser {
             return this.parseTypeDeclaration();
           }*/
 
-          if(current.value === Structures.MATCH) {
+          if(newCurrent.value === Structures.MATCH) {
             return this.errors.SyntaxError.throw(
               "Match expressions cannot be statements",
               this.file,
@@ -403,9 +427,9 @@ export class Parser {
           }
 
           return this.errors.UnexpectedTokenError.throw(
-            `Unexpected keyword '${current.value}'`,
+            `Unexpected keyword '${newCurrent.value}'`,
             this.file,
-            this.getSource(current),
+            this.getSource(newCurrent),
           );
         }
 
@@ -867,19 +891,11 @@ export class Parser {
 
     const isRest = this.consume(TokenType.DOT_DOT_DOT);
 
-    const paramIdentifier = this.parseIdentifier();
-    if (paramIdentifier instanceof BaseError) return paramIdentifier;
-
-    if (!this.consume(TokenType.COLON)) {
-      return this.errors.SyntaxError.throw(
-        `Expected ':' after parameter name`,
-        this.file,
-        this.getSource(),
-      );
-    }
-
     const paramType = this.parseTypeReference(TypeReferenceKind.ANY, true);
     if (paramType instanceof BaseError) return paramType;
+
+    const paramIdentifier = this.parseIdentifier();
+    if (paramIdentifier instanceof BaseError) return paramIdentifier;
 
     return new Nodes.Parameter(startLoc, paramIdentifier, paramType, isRest);
   }
@@ -1122,7 +1138,7 @@ export class Parser {
     );
   }
 
-  private parseModifiers(allowed: Set<ModifierName>): ParseResult<typeof Modifiers> {
+  private parseModifiers(allowed: Set<ModifierName>, isTopLevel: boolean = false): ParseResult<typeof Modifiers> {
     const parsed = Modifiers.clone();
   
     while (this.current.type === TokenType.KEYWORD) {
@@ -1153,6 +1169,14 @@ export class Parser {
 
       parsed.set(mod);
       this.advance();
+    }
+
+    if (!isTopLevel && parsed.hasAny('EXPORT', 'DEFAULT')) {
+      return this.errors.SyntaxError.throw(
+        "'export/default' can only be used at the top-level of a module",
+        this.file,
+        this.getSource()
+      )
     }
   
     return parsed;
@@ -1656,16 +1680,14 @@ export class Parser {
     const parameters = this.parseParameterList();
     if (parameters instanceof BaseError) return parameters;
 
-    if (!this.consume(TokenType.COLON)) {
-      return this.errors.SyntaxError.throw(
-        `Expected ':' after parameter list in func declaration`,
-        this.file,
-        this.getSource(),
-      );
-    }
+    let returnType;
 
-    const returnType = this.parseFunctionTypeReference();
-    if (returnType instanceof BaseError) return returnType;
+    if (this.consume(TokenType.COLON)) {
+      returnType = this.parseFunctionTypeReference();
+      if (returnType instanceof BaseError) return returnType;
+    } else {
+      returnType = new Nodes.VoidType(this.getSource());
+    }
 
     const body = this.parseBlock();
     if (body instanceof BaseError) return body;
@@ -1837,6 +1859,12 @@ export class Parser {
         this.getSource(),
       );
     }
+
+    return this.errors.SyntaxError.throw(
+      "Generics are not supported in this version of Kyro",
+      this.file,
+      generics[0].loc || this.getSource()
+    )
 
     return generics;
   }
@@ -2260,7 +2288,7 @@ export class Parser {
     const recursionError = this.enterRecursion();
     if (recursionError) return recursionError;
 
-    console.log("Parsing expression ", this.current)
+    //console.log("Parsing expression ", this.current)
     
     const result = this.parseConditionalExpression() as Expression;
     this.exitRecursion();
@@ -2688,7 +2716,7 @@ export class Parser {
     let expr = this.parsePrimaryExpression();
     if (expr instanceof BaseError) return expr;
 
-    console.log("Checking postfix exp")
+    //console.log("Checking postfix exp")
 
     while (this.current && this.current.type !== TokenType.EOF) {
       const current = this.current;
@@ -2740,7 +2768,7 @@ export class Parser {
         current.type === TokenType.INCREMENT ||
         current.type === TokenType.DECREMENT
       ) {
-        console.log("detected postfix op")
+        //console.log("detected postfix op")
         if (
           !(
             expr instanceof Nodes.Identifier ||

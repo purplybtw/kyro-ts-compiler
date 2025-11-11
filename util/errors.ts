@@ -1,6 +1,6 @@
 import { SourceLocation } from "../ast/nodes";
 import chalk from "chalk";
-import { filterMatches, getFileContent } from "./any";
+import { filterMatches, getFileContent, splitBy } from "./any";
 import fs from "fs";
 
 export const errorNames = [
@@ -105,9 +105,17 @@ export interface ErrorResponse {
 }
 
 export function renderFileInput(path: string) {
+  let splitPath = splitBy(path, ["/", "\\"]);
+
+  const filename = splitPath[splitPath.length - 1]
+
+  if(splitPath === undefined || !filename) {
+    throw new Error("Invalid path: "+path)
+  }
+
   return {
-    filename: path.split('/').pop() || '<unknown>',
-    pathname: path.split('/').slice(0, -1).join('/'),
+    filename,
+    pathname: splitPath.slice(0, -1).join('/'),
     path: path
   }
 }

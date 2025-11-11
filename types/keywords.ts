@@ -43,7 +43,8 @@ export enum Structures {
   READONLY = "readonly",
   FINAL = "final",
   ABSTRACT = "abstract",
-  THIS = "this"
+  THIS = "this",
+  EXPORT = "export"
 }
 
 export enum Others {

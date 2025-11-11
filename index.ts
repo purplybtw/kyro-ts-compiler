@@ -1,5 +1,5 @@
 import { BinaryExpression, buildSourceLocation, ExpressionStatement, Node, NumberLiteral } from "./ast/nodes";
-import KyroInstance from "./main/init";
+import KyroCompiler from "./main/init";
 import { renderFileInput } from "./util/errors";
 
 function evaluateBinaryExpression(node: BinaryExpression): number {
@@ -36,7 +36,7 @@ export function evaluateExpression(node: Node): number {
 }
 
 async function main() {  
-  const jv = new KyroInstance(
+  const jv = new KyroCompiler(
     renderFileInput("./tests/test.ky"), 
     renderFileInput("./tests/test.cky"), 
     "process",

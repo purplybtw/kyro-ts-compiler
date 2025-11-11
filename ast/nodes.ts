@@ -666,9 +666,14 @@ export class IntersectionType extends Node {
   }
 }
 
+interface ProgramMetadata {
+  defaultMemberPtr: number | undefined,
+  exportMembersPtr: number[],
+}
+
 export class Program extends Node {
   type = "Program" as const
-  constructor(loc: SourceLocation, public body: Node[]) {
+  constructor(loc: SourceLocation, public body: Node[], public imports: ImportDeclaration[], public metadata: ProgramMetadata) {
     super(loc)
   }
   accept<T>(visitor: BaseVisitor<T>): T {

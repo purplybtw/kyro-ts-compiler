@@ -1,13 +1,13 @@
-import myDefaultClass from "./test.ky";
-import { myPublicClass } from "./test.ky";
-import myDefaultClass, { myPublicClass as aliasForPublicClass } from "./test.ky";
-import native std from "std";
+import myDefaultClass from "./main.kyro";
+import { subtract } from "./main.kyro";
+import myDefaultClass, { multiply as aliasForPublicClass } from "./main.kyro";
+import native console from "console";
 
 default static class MainClass {
     private int result = 0 + null;
     private Parser parser;
 
-    public static operator +(a: int): void {
+    public static operator +(int a): void {
         return a + b;
     }
 

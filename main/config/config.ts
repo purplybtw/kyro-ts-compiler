@@ -1,4 +1,4 @@
 export default {
-    file_ext: "kyro", // source file extension
+    file_ext: "ky", // source file extension
     c_file_ext: "cky" // compiled file extension
 }

@@ -293,6 +293,13 @@ export class Lexer {
     return this.input.substring(this.pos, this.pos + expected.length) === expected;
   }
 
+  private previous(): string {
+    if (this.pos-1 < 0) {
+      return '\0';
+    }
+    return this.input[this.pos-1];
+  }
+
   private current(): string {
     if (this.pos >= this.input.length) {
       return '\0';
@@ -350,6 +357,7 @@ export class Lexer {
     while(
       (this.pos < this.input.length && this.isDigit(this.current()))
       || (this.current() === '.' && !isDecimal && this.next() !== '.' && (isDecimal = true))
+      || (this.current() === '_' && this.isDigit(this.previous()) && this.isDigit(this.next()))
     ) {
       parsed += this.current();
       this.advance();

@@ -12,6 +12,7 @@ export const ModifierFlags = {
     FINAL: 1 << 7,
     READONLY: 1 << 8,
     OVERRIDE: 1 << 9,
+    EXPORT: 1 << 10,
 };
 
 export type ModifierName = keyof typeof ModifierFlags;
@@ -19,7 +20,7 @@ export type ModifierName = keyof typeof ModifierFlags;
 export const ModifierSetSubset = defineSetSubset<ModifierName>(); 
 
 export const accessModifiers = ModifierSetSubset([
-    "PUBLIC", "PRIVATE", "PROTECTED", "DEFAULT"
+    "PUBLIC", "PRIVATE", "PROTECTED", "DEFAULT", "EXPORT"
 ]);
 
 export const behaviorModifiers = ModifierSetSubset([
