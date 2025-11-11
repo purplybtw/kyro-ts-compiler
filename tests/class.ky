@@ -1,6 +1,6 @@
-import myDefaultClass from "./main.kyro";
-import { subtract } from "./main.kyro";
-import myDefaultClass, { multiply as aliasForPublicClass } from "./main.kyro";
+import myDefaultClass from "./main.ky";
+import { subtract } from "./main.ky";
+import myDefaultClass, { multiply as aliasForPublicClass } from "./main.ky";
 import native console from "console";
 
 default static class MainClass {

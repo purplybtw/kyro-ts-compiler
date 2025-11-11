@@ -68,7 +68,7 @@ if (outIsDir) {
 
 const baseName = path.basename(inputPath, "." + config.file_ext);
 const finalOut = outIsDir
-    ? path.join(outPath, baseName + config.c_file_ext)
+    ? path.join(outPath, baseName + "." + config.c_file_ext)
     : outPath;
 
 const kyro = new KyroCompiler(
